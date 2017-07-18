@@ -11,4 +11,5 @@ public enum SenzTypeEnum {
     PUT,
     STREAM,
     ACK,
+    AK
 }

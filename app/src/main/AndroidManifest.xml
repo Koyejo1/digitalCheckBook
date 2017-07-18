@@ -43,7 +43,10 @@
     <!-- access to read sms -->
     <uses-permission android:name="android.permission.READ_SMS" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
+    <!-- access to read/write to filesystem -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
     <uses-feature android:name="android.hardware.camera" />
@@ -59,8 +62,8 @@
 
     <!-- android:name=".application.SenzApplication" -->
     <application
-        android:name="com.score.rahasak.application.SenzApplication"
-        android:icon="@drawable/rahaslogo"
+        android:name=".application.SenzApplication"
+        android:icon="@drawable/sampath_logo"
         android:label="@string/app_name"
         android:theme="@style/MyMaterialTheme">
 
@@ -80,83 +83,84 @@
 
         <!-- - activities -->
         <activity
-            android:name="com.score.rahasak.ui.SplashActivity"
+            android:name=".ui.SplashActivity"
             android:configChanges="orientation"
             android:screenOrientation="portrait"
             android:theme="@style/MyMaterialTheme"
             android:windowSoftInputMode="stateHidden">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
         <activity
-            android:name="com.score.rahasak.ui.MapActivity"
+            android:name=".ui.MapActivity"
             android:screenOrientation="portrait"
             android:theme="@style/MyMaterialTheme"
             android:windowSoftInputMode="stateHidden" />
         <activity
-            android:name="com.score.rahasak.ui.ChatActivity"
+            android:name=".ui.ChatActivity"
             android:launchMode="singleTask"
             android:screenOrientation="portrait"
             android:theme="@style/MyMaterialTheme"
             android:windowSoftInputMode="adjustResize" />
         <activity
-            android:name="com.score.rahasak.ui.DrawerActivity"
+            android:name=".ui.DrawerActivity"
             android:launchMode="singleTask"
             android:screenOrientation="portrait"
             android:theme="@style/MyMaterialTheme" />
         <activity
-            android:name="com.score.rahasak.ui.AddUsernameActivity"
+            android:name=".ui.AddUsernameActivity"
             android:screenOrientation="portrait"
             android:theme="@style/MyMaterialTheme"
             android:windowSoftInputMode="adjustResize" />
         <activity
-            android:name="com.score.rahasak.ui.RegistrationActivity"
+            android:name=".ui.RegistrationActivity"
             android:screenOrientation="portrait"
             android:theme="@style/MyMaterialTheme"
             android:windowSoftInputMode="stateHidden" />
         <activity
-            android:name="com.score.rahasak.ui.SelfieCallAnswerActivity"
+            android:name=".ui.SelfieCallAnswerActivity"
             android:launchMode="singleTask"
             android:screenOrientation="portrait"
             android:theme="@style/Theme.AppCompat.NoActionBar" />
         <activity
-            android:name="com.score.rahasak.ui.UserProfileActivity"
+            android:name=".ui.UserProfileActivity"
             android:screenOrientation="portrait"
             android:theme="@style/MyMaterialTheme" />
         <activity
-            android:name="com.score.rahasak.ui.SelfieCallActivity"
+            android:name=".ui.SelfieCallActivity"
             android:screenOrientation="portrait"
             android:theme="@style/MyMaterialTheme" />
         <activity
-            android:name="com.score.rahasak.ui.SecretCallAnswerActivity"
+            android:name=".ui.SecretCallAnswerActivity"
             android:launchMode="singleTask"
             android:screenOrientation="portrait"
             android:theme="@style/MyMaterialTheme" />
         <activity
-            android:name="com.score.rahasak.ui.SecretCallActivity"
-            android:screenOrientation="portrait"
+            android:name=".ui.SecretCallActivity"
             android:launchMode="singleTask"
-            android:theme="@style/MyMaterialTheme" />
-        <activity
-            android:name="com.score.rahasak.ui.ContactListActivity"
             android:screenOrientation="portrait"
             android:theme="@style/MyMaterialTheme" />
         <activity
-            android:name="com.score.rahasak.ui.PrivacyTermsActivity"
+            android:name=".ui.ContactListActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/MyMaterialTheme" />
+        <activity
+            android:name=".ui.PrivacyTermsActivity"
             android:screenOrientation="portrait"
             android:theme="@style/MyMaterialTheme" />
 
         <!-- Servicves -->
         <service
-            android:name="com.score.rahasak.remote.LatLonService"
+            android:name=".remote.LatLonService"
             android:enabled="true" />
         <service
-            android:name="com.score.rahasak.remote.CallService"
+            android:name=".remote.CallService"
             android:enabled="true" />
         <service
-            android:name="com.score.rahasak.remote.SenzService"
+            android:name=".remote.SenzService"
             android:enabled="true">
             <intent-filter>
                 <action android:name="com.score.rahasak.remote.SenzService" />
@@ -164,22 +168,41 @@
         </service>
 
         <!-- Receievers -->
-        <receiver android:name="com.score.rahasak.receivers.SenzStartReceiver">
+        <receiver android:name=".receivers.SenzStartReceiver">
             <intent-filter>
                 <action android:name="com.score.rahasak.RESTART" />
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
-        <receiver android:name="com.score.rahasak.receivers.NetworkStatusReceiver">
+        <receiver android:name=".receivers.NetworkStatusReceiver">
             <intent-filter>
-                <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />.
+                <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
+                .
             </intent-filter>
         </receiver>
-        <receiver android:name="com.score.rahasak.receivers.SmsReceiver">
+        <receiver android:name=".receivers.SmsReceiver">
             <intent-filter android:priority="1000">
                 <action android:name="android.provider.Telephony.SMS_RECEIVED" />
             </intent-filter>
         </receiver>
+
+        <activity
+            android:name=".ui.SetupActivity"
+            android:label="@string/title_activity_setup"
+            android:theme="@style/MyMaterialTheme" />
+        <activity
+            android:name=".ui.CaptureSignatureActivity"
+            android:label="@string/title_activity_capture_signature"
+            android:theme="@style/MyMaterialTheme" />
+        <activity
+            android:name=".ui.CheckFullScreenActivity"
+            android:label="@string/title_activity_check_full_screen"
+            android:theme="@style/MyMaterialTheme" />
+        <activity
+            android:name=".ui.CheckDetailActivity"
+            android:label="@string/title_activity_check_detail"
+            android:theme="@style/MyMaterialTheme" />
+        <activity android:name=".ui.CheckFullScreenPreviewActivity"></activity>
     </application>
 
 </manifest>

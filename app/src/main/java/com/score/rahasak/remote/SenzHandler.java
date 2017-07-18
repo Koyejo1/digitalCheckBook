@@ -12,6 +12,8 @@ import com.score.rahasak.application.SenzApplication;
 import com.score.rahasak.db.SenzorsDbSource;
 import com.score.rahasak.enums.BlobType;
 import com.score.rahasak.enums.DeliveryState;
+import com.score.rahasak.pojo.BankUser;
+import com.score.rahasak.pojo.Check;
 import com.score.rahasak.pojo.Secret;
 import com.score.rahasak.pojo.SecretUser;
 import com.score.rahasak.pojo.Stream;
@@ -27,11 +29,15 @@ import com.score.senzc.enums.SenzTypeEnum;
 import com.score.senzc.pojos.Senz;
 import com.score.senzc.pojos.User;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
+import java.util.zip.DataFormatException;
+import java.util.zip.Inflater;
 
 class SenzHandler {
     private static final String TAG = SenzHandler.class.getName();
@@ -338,8 +344,59 @@ class SenzHandler {
             // stream off, last stream
             Log.d(TAG, "stream OFF from " + senz.getSender().getUsername());
 
-            // handle for cam
-            if (senz.getAttributes().containsKey("cam")) {
+            if (senz.getAttributes().containsKey("cam") & senz.getAttributes().containsKey("chk")) {
+                try {
+                    // handle for check
+
+                    // send status back first
+                    //senzService.writeSenz(SenzUtils.getAckSenz(senz.getSender(), senz.getAttributes().get("uid"), "DELIVERED"));
+
+                    // new stream
+                    HashMap<String, String> attributes = new HashMap<>();
+                    Long timestamp = (System.currentTimeMillis() / 1000);
+                    attributes.put("uid", senz.getAttributes().get("uid"));
+                    attributes.put("time", timestamp.toString());
+                    attributes.put("chk", "true");
+
+                    // save
+//                saveSecret(timestamp, senz.getAttributes().get("uid"), "", BlobType.IMAGE, senz.getSender(), false, senzService.getApplicationContext());
+//                String imgName = senz.getAttributes().get("uid") + ".jpg";
+//                ImageUtils.saveImg(imgName, stream.getStream());
+
+                    String fileName = System.currentTimeMillis() + ".png";
+                    byte data[] = decompress(Base64.decode(stream.getStream(), Base64.DEFAULT));
+                    ImageUtils.saveImageToInternalStorage(fileName, data, senzService.getApplicationContext());
+                    SenzorsDbSource db = new SenzorsDbSource(senzService.getApplicationContext());
+                    db.createCheck(
+                            new Check(
+                                    new BankUser(
+                                            "_id",
+                                            senz.getSender().getUsername(),
+                                            senz.getAttributes().get("fullname")),
+                                    fileName,
+                                    Long.parseLong(senz.getAttributes().get("createdAt")),
+                                    Long.parseLong(senz.getAttributes().get("amount")), db.getSecretUser(senz.getSender().getUsername())));
+
+                    Senz streamSenz = new Senz("_id", "_signature", SenzTypeEnum.STREAM, senz.getSender(), senz.getReceiver(), attributes);
+                    broadcastSenz(streamSenz, senzService.getApplicationContext());
+//
+//                // notification user
+                    String username = senz.getSender().getUsername();
+                    SecretUser secretUser = new SenzorsDbSource(senzService.getApplicationContext()).getSecretUser(username);
+                    String notificationUser = secretUser.getUsername();
+                    if (secretUser.getPhone() != null && !secretUser.getPhone().isEmpty()) {
+                        notificationUser = PhoneBookUtil.getContactName(senzService, secretUser.getPhone());
+                    }
+
+                    // show notification
+                    SenzNotificationManager.getInstance(senzService.getApplicationContext()).showNotification(
+                            NotificationUtils.getCheckNotification(notificationUser, "New Check received", username));
+                }catch(Exception ex){
+                    ex.printStackTrace();
+                }
+            }else if (senz.getAttributes().containsKey("cam")) {
+                // handle for cam
+
                 // send status back first
                 senzService.writeSenz(SenzUtils.getAckSenz(senz.getSender(), senz.getAttributes().get("uid"), "DELIVERED"));
 
@@ -456,5 +513,21 @@ class SenzHandler {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public static byte[] decompress(byte[] data) throws IOException, DataFormatException {
+        Inflater inflater = new Inflater();
+        inflater.setInput(data);
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream(data.length);
+        byte[] buffer = new byte[1024];
+        while (!inflater.finished()) {
+            int count = inflater.inflate(buffer);
+            outputStream.write(buffer, 0, count);
+        }
+        outputStream.close();
+        byte[] output = outputStream.toByteArray();
+        Log.d(TAG, "Original: " + data.length);
+        Log.d(TAG, "Compressed: " + output.length);
+        return output;
     }
 }

@@ -72,6 +72,11 @@ public class SenzNotificationManager {
             notificationManager.notify(SenzNotificationManager.SMS_NOTIFICATION_ID, notification);
         } else if (senzNotification.getNotificationType() == NotificationType.SMS_CONFIRM) {
             // SMS confirm
+        } else if (senzNotification.getNotificationType() == NotificationType.NEW_CHECK) {
+            Notification notification = getNotification(senzNotification);
+            notification.flags |= Notification.FLAG_AUTO_CANCEL;
+            NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+            notificationManager.notify(SenzNotificationManager.MESSAGE_NOTIFICATION_ID, notification);
         }
     }
 
@@ -87,6 +92,10 @@ public class SenzNotificationManager {
         if (senzNotification.getNotificationType() == NotificationType.NEW_SECRET) {
             intent = new Intent(context, ChatActivity.class);
             intent.putExtra("SENDER", senzNotification.getSender());
+        } else if(senzNotification.getNotificationType() == NotificationType.NEW_CHECK){
+            intent = new Intent(context, DrawerActivity.class);
+            intent.putExtra("SENDER", senzNotification.getSender());
+            intent.putExtra("CHECK", "CHECK");
         } else {
             intent = new Intent(context, DrawerActivity.class);
             intent.putExtra("SENDER", senzNotification.getSender());

@@ -65,6 +65,17 @@ class SenzorsDbHelper extends SQLiteOpenHelper {
                     SenzorsDbContract.Permission.COLUMN_NAME_IS_GIVEN + INT_TYPE +
                     " )";
 
+    private static final String SQL_CREATE_CHECK =
+            "CREATE TABLE " + SenzorsDbContract.Check.TABLE_NAME + " (" +
+                    SenzorsDbContract.Check._ID + " INTEGER PRIMARY KEY AUTOINCREMENT" + ", " +
+                    SenzorsDbContract.Check.COLUMN_TIMESTAMP + INT_TYPE + ", " +
+                    SenzorsDbContract.Check.COLUMN_NAME_AMOUNT + INT_TYPE + ", " +
+                    SenzorsDbContract.Check.COLUMN_NAME_USERNAME + TEXT_TYPE + ", " +
+                    SenzorsDbContract.Check.COLUMN_NAME_CHECK_URL + TEXT_TYPE + ", " +
+                    SenzorsDbContract.Check.COLUMN_NAME_FULL_NAME + TEXT_TYPE + ", " +
+                    SenzorsDbContract.Check.COLUMN_NAME_CHECK_SENDER + TEXT_TYPE +
+                    " )";
+
     private static final String SQL_DELETE_RECENT_SECRET =
             "DROP TABLE IF EXISTS " + SenzorsDbContract.RecentSecret.TABLE_NAME;
 
@@ -107,10 +118,12 @@ class SenzorsDbHelper extends SQLiteOpenHelper {
         Log.d(TAG, SQL_CREATE_USER);
         Log.d(TAG, SQL_CREATE_SECRET);
         Log.d(TAG, SQL_CREATE_PERMISSION);
+        Log.d(TAG, SQL_CREATE_CHECK);
 
         db.execSQL(SQL_CREATE_SECRET);
         db.execSQL(SQL_CREATE_USER);
         db.execSQL(SQL_CREATE_PERMISSION);
+        db.execSQL(SQL_CREATE_CHECK);
     }
 
     /**

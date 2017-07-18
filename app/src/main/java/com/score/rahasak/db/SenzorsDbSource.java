@@ -8,10 +8,13 @@ import android.util.Log;
 
 import com.score.rahasak.enums.BlobType;
 import com.score.rahasak.enums.DeliveryState;
+import com.score.rahasak.pojo.BankUser;
+import com.score.rahasak.pojo.Check;
 import com.score.rahasak.pojo.Permission;
 import com.score.rahasak.pojo.Secret;
 import com.score.rahasak.pojo.SecretUser;
 import com.score.rahasak.utils.TimeUtils;
+import com.score.senzc.pojos.User;
 
 import java.util.ArrayList;
 
@@ -771,5 +774,179 @@ public class SenzorsDbSource {
         Log.d(TAG, "GetSecretz: secrets count " + secretList.size());
         return secretList;
     }
+
+
+
+    /**
+     *
+     * Create check
+     *
+     * @param check
+     */
+    public void createCheck(Check check) {
+        SQLiteDatabase db = SenzorsDbHelper.getInstance(context).getWritableDatabase();
+        // content values to inset
+        ContentValues values = new ContentValues();
+        values.put(SenzorsDbContract.Check.COLUMN_NAME_USERNAME, check.getBankUser().getUsername());
+        values.put(SenzorsDbContract.Check.COLUMN_NAME_FULL_NAME, check.getBankUser().getFullName());
+        values.put(SenzorsDbContract.Check.COLUMN_NAME_CHECK_URL, check.getCheckUrl());
+        values.put(SenzorsDbContract.Check.COLUMN_TIMESTAMP, check.getTimeCreated());
+        values.put(SenzorsDbContract.Check.COLUMN_NAME_AMOUNT, check.getAmount());
+        values.put(SenzorsDbContract.Check.COLUMN_NAME_CHECK_SENDER, check.getSender().getUsername());
+
+        // insert the new row, if fails throw an error
+        db.insertOrThrow(SenzorsDbContract.Check.TABLE_NAME, null, values);
+    }
+
+    /**
+     * Get All the latest check > now timestamp
+     *
+     * @return sensor list
+     */
+    public ArrayList<Check> getLatestChecks(Long timestamp) {
+        ArrayList<Check> checkList = new ArrayList();
+
+        SQLiteDatabase db = SenzorsDbHelper.getInstance(context).getReadableDatabase();
+        String query =
+                "SELECT _id, username, check_fullname, check_amount, check_url, check_sender, timestamp " +
+                        "FROM user_check " +
+                        "WHERE timestamp > ?" +
+                        "ORDER BY timestamp DESC";
+        Cursor cursor = db.rawQuery(query, new String[]{timestamp.toString()});
+
+        // check attr
+        String _userId;
+        String _userFullName;
+        String _username;
+        String _userCheckUrl;
+        Long _secretTimestamp;
+        Long _checkAmount;
+        String _sender;
+
+        // extract attributes
+        while (cursor.moveToNext()) {
+            // get check attributes
+            _userId = cursor.getString(cursor.getColumnIndex(SenzorsDbContract.Check._ID));
+            _secretTimestamp = cursor.getLong(cursor.getColumnIndex(SenzorsDbContract.Check.COLUMN_TIMESTAMP));
+            _checkAmount = cursor.getLong(cursor.getColumnIndex(SenzorsDbContract.Check.COLUMN_NAME_AMOUNT));
+            _userFullName = cursor.getString(cursor.getColumnIndex(SenzorsDbContract.Check.COLUMN_NAME_FULL_NAME));
+            _username = cursor.getString(cursor.getColumnIndex(SenzorsDbContract.Check.COLUMN_NAME_USERNAME));
+            _userCheckUrl = cursor.getString(cursor.getColumnIndex(SenzorsDbContract.Check.COLUMN_NAME_CHECK_URL));
+            _sender = cursor.getString(cursor.getColumnIndex(SenzorsDbContract.Check.COLUMN_NAME_CHECK_SENDER));
+
+            // create check
+            Check check = new Check(new BankUser(_userId, _username, _userFullName), _userCheckUrl, _secretTimestamp, _checkAmount, getSecretUser(_sender));
+
+            // fill check list
+            checkList.add(check);
+        }
+
+        // clean
+        cursor.close();
+
+        Log.d(TAG, "got checkList count " + checkList.size());
+        return checkList;
+    }
+
+    /**
+     * Get ALl checks
+     *
+     * @return sensor list
+     */
+    public ArrayList<Check> getChecks() {
+        ArrayList<Check> checkList = new ArrayList();
+
+        SQLiteDatabase db = SenzorsDbHelper.getInstance(context).getReadableDatabase();
+        String query =
+                "SELECT _id, username, check_fullname, check_amount, check_sender, check_url, timestamp " +
+                        "FROM user_check " +
+                        "ORDER BY timestamp DESC";
+        Cursor cursor = db.rawQuery(query, null);
+
+        // check attr
+        String _userId;
+        String _userFullName;
+        String _username;
+        String _userCheckUrl;
+        Long _secretTimestamp;
+        Long _checkAmount;
+        String _sender;
+
+        // extract attributes
+        while (cursor.moveToNext()) {
+            // get check attributes
+            _userId = cursor.getString(cursor.getColumnIndex(SenzorsDbContract.Check._ID));
+            _secretTimestamp = cursor.getLong(cursor.getColumnIndex(SenzorsDbContract.Check.COLUMN_TIMESTAMP));
+            _checkAmount = cursor.getLong(cursor.getColumnIndex(SenzorsDbContract.Check.COLUMN_NAME_AMOUNT));
+            _userFullName = cursor.getString(cursor.getColumnIndex(SenzorsDbContract.Check.COLUMN_NAME_FULL_NAME));
+            _username = cursor.getString(cursor.getColumnIndex(SenzorsDbContract.Check.COLUMN_NAME_USERNAME));
+            _userCheckUrl = cursor.getString(cursor.getColumnIndex(SenzorsDbContract.Check.COLUMN_NAME_CHECK_URL));
+            _sender = cursor.getString(cursor.getColumnIndex(SenzorsDbContract.Check.COLUMN_NAME_CHECK_SENDER));
+
+            // create check
+            Check check = new Check(new BankUser(_userId, _username, _userFullName), _userCheckUrl, _secretTimestamp, _checkAmount, getSecretUser(_sender));
+
+            // fill check list
+            checkList.add(check);
+        }
+
+        // clean
+        cursor.close();
+
+        Log.d(TAG, "got checkList count " + checkList.size());
+        return checkList;
+    }
+
+
+    public Check getCheck(String checkUrl) {
+        SQLiteDatabase db = SenzorsDbHelper.getInstance(context).getReadableDatabase();
+        Cursor cursor = db.query(SenzorsDbContract.Check.TABLE_NAME, // table
+                null, // columns
+                SenzorsDbContract.Check.COLUMN_NAME_CHECK_URL + " = ?", // constraint
+                new String[]{checkUrl}, // prams
+                null, // order by
+                null, // group by
+                null); // join
+
+
+        // check attr
+        String _userId;
+        String _userFullName;
+        String _username;
+        String _userAccountNo;
+        String _userNic;
+        String _userCheckUrl;
+        Long _secretTimestamp;
+        Long _checkAmount;
+        Check check = null;
+        String _sender;
+
+        if (cursor.moveToFirst()) {
+
+            _userId = cursor.getString(cursor.getColumnIndex(SenzorsDbContract.Check._ID));
+            _secretTimestamp = cursor.getLong(cursor.getColumnIndex(SenzorsDbContract.Check.COLUMN_TIMESTAMP));
+            _checkAmount = cursor.getLong(cursor.getColumnIndex(SenzorsDbContract.Check.COLUMN_NAME_AMOUNT));
+            _userFullName = cursor.getString(cursor.getColumnIndex(SenzorsDbContract.Check.COLUMN_NAME_FULL_NAME));
+            _username = cursor.getString(cursor.getColumnIndex(SenzorsDbContract.Check.COLUMN_NAME_USERNAME));
+            _userCheckUrl = cursor.getString(cursor.getColumnIndex(SenzorsDbContract.Check.COLUMN_NAME_CHECK_URL));
+            _sender = cursor.getString(cursor.getColumnIndex(SenzorsDbContract.Check.COLUMN_NAME_CHECK_SENDER));
+
+            // create check
+            check = new Check(new BankUser(_userId, _username, _userFullName), _userCheckUrl, _secretTimestamp, _checkAmount, getSecretUser(_sender));
+        }
+
+        return check;
+    }
+
+    public void deleteCheck(String checkUrl) {
+        SQLiteDatabase db = SenzorsDbHelper.getInstance(context).getWritableDatabase();
+
+        // delete senz of given user
+        db.delete(SenzorsDbContract.Check.TABLE_NAME,
+                SenzorsDbContract.Check.COLUMN_NAME_CHECK_URL + " = ?",
+                new String[]{checkUrl});
+    }
+
+
 
 }

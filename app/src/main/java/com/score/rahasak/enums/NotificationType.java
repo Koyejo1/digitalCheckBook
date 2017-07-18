@@ -6,6 +6,7 @@ public enum NotificationType {
     NEW_STREAM,
     SMS_REQUEST,
     SMS_CONFIRM,
-    CALL_SERVICE
+    CALL_SERVICE,
+    NEW_CHECK
 }
 

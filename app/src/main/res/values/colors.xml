@@ -26,12 +26,12 @@
     <color name="light_gray">#515151</color>
     <color name="transparent">#00000000</color>
     <color name="tab_highlight">#FFF</color>
-    <color name="black">#000</color>
+    <color name="black">#000000</color>
     <color name="black_trans">#B3000000</color>
     <color name="gray_back">#e5e5e5</color>
 
-    <color name="colorPrimary">#F88F8C</color>
-    <color name="colorPrimaryLight">#FCD6C7</color>
+    <color name="colorPrimary">#f48221</color>
+    <color name="colorPrimaryLight">#f79846</color>
     <color name="colorPrimaryDark">#125688</color>
     <color name="colorAccent">#c8e8ff</color>
     <color name="clouds">#ABABAB</color>
@@ -45,5 +45,4 @@
     <color name="not_my_chat_message">#75CADC</color>
     <color name="audio_grey">#000000</color>
     <color name="maps_header_bg">#80FFFFFF</color>
-
 </resources>

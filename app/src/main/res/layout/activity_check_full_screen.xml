@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white">
+
+    <RelativeLayout
+        android:id="@+id/root_view_check"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/black">
+
+        <ImageView
+            android:id="@+id/check_bg"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_centerInParent="true"
+            android:background="@color/black"
+            android:src="@drawable/empty_check" />
+
+
+        <TextView
+            android:id="@+id/fullName"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginBottom="100dp"
+            android:layout_marginLeft="35dp"
+            android:layout_marginTop="80dp"
+            android:gravity="left|center_vertical|center_horizontal"
+            android:rotation="90"
+            android:text="Hollu Pathirage Lakmal Caldera"
+            android:textColor="@color/black"
+            android:textColorLink="@color/black"
+            android:textStyle="bold" />
+
+
+        <TextView
+            android:id="@+id/now_date"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginLeft="130dp"
+            android:layout_marginTop="250dp"
+            android:gravity="right|center"
+            android:rotation="90"
+            android:text="07/12/2017"
+            android:textColor="@color/black"
+            android:textColorLink="@color/black"
+            android:textStyle="bold" />
+
+
+        <TextView
+            android:id="@+id/amount_in_words"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginBottom="100dp"
+            android:layout_marginRight="26dp"
+            android:gravity="center_vertical"
+            android:rotation="90"
+            android:text="One Hundred Million One Hundred Million One Hundred Million"
+            android:textColor="@color/black"
+            android:textColorLink="@color/black"
+            android:textStyle="bold" />
+
+
+        <TextView
+            android:id="@+id/amount"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginLeft="40dp"
+            android:layout_marginTop="180dp"
+            android:gravity="right|center"
+            android:rotation="90"
+            android:text="100,000,000"
+            android:textColor="@color/black"
+            android:textColorLink="@color/black"
+            android:textStyle="bold" />
+
+
+        <ImageView
+            android:id="@+id/signature"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:layout_alignParentBottom="false"
+            android:layout_alignParentEnd="false"
+            android:layout_alignParentLeft="false"
+            android:layout_alignParentRight="false"
+            android:layout_alignParentStart="false"
+            android:layout_alignParentTop="false"
+            android:layout_alignWithParentIfMissing="false"
+            android:layout_centerHorizontal="false"
+            android:layout_centerInParent="true"
+            android:layout_centerVertical="false"
+            android:adjustViewBounds="false"
+            android:rotation="90"
+            android:src="@drawable/love_speech"
+            android:translationX="-65dp"
+            android:translationY="160dp" />
+
+    </RelativeLayout>
+
+</RelativeLayout>

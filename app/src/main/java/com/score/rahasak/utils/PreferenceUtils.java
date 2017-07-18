@@ -5,6 +5,7 @@ import android.content.SharedPreferences;
 
 import com.score.rahasak.R;
 import com.score.rahasak.exceptions.NoUserException;
+import com.score.rahasak.pojo.BankUser;
 import com.score.senzc.pojos.User;
 
 /**
@@ -31,6 +32,30 @@ public class PreferenceUtils {
     }
 
     /**
+     * Save Bank user info in shared preference
+     *
+     * @param context application context
+     */
+    public static void saveSignature(Context context, String signatureFileName) {
+        SharedPreferences preferences = context.getSharedPreferences(context.getString(R.string.preference_file_key), Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = preferences.edit();
+
+        //keys should be constants as well, or derived from a constant prefix in a loop.
+        editor.putString("signaturefile", signatureFileName);
+        editor.commit();
+    }
+
+    /**
+     * Return Registered User's signature filename
+     * @param context
+     * @return
+     */
+    public static String getSignatureFileName(Context context){
+        SharedPreferences preferences = context.getSharedPreferences(context.getString(R.string.preference_file_key), Context.MODE_PRIVATE);
+        return preferences.getString("signaturefile", "");
+    }
+
+    /**
      * Get user details from shared preference
      *
      * @param context application context
@@ -40,6 +65,7 @@ public class PreferenceUtils {
         SharedPreferences preferences = context.getSharedPreferences(context.getString(R.string.preference_file_key), Context.MODE_PRIVATE);
         String id = preferences.getString("id", "0");
         String username = preferences.getString("username", "");
+
 
         if (username.isEmpty())
             throw new NoUserException();

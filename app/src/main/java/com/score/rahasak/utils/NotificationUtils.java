@@ -44,6 +44,10 @@ public class NotificationUtils {
         return new SenzNotification(R.drawable.notification_icon, title, message, user, NotificationType.NEW_SECRET);
     }
 
+    public static SenzNotification getCheckNotification(String title, String message, String user) {
+        return new SenzNotification(R.drawable.notification_icon, title, message, user, NotificationType.NEW_CHECK);
+    }
+
     public static SenzNotification getSmsNotification(String contactName, String contactPhone, String rahasakUsername) {
         String msg = "Would you like share secrets?";
 

@@ -32,7 +32,7 @@
                 android:layout_height="80dp"
                 android:layout_gravity="center_horizontal"
                 android:layout_marginBottom="30dp"
-                android:src="@drawable/owl_out" />
+                android:src="@drawable/sampath_logo" />
 
             <TextView
                 android:id="@+id/empty_view_friend"

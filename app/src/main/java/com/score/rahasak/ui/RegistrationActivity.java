@@ -195,7 +195,7 @@ public class RegistrationActivity extends BaseActivity {
                 // save user
                 // navigate home
                 PreferenceUtils.saveUser(this, registeringUser);
-                navigateToHome();
+                navigateToSetup();
             } else if (msg != null && msg.equalsIgnoreCase("REG_FAIL")) {
                 String informationMessage = "<font size=10>Seems username </font> <font color=#F88F8C>" + "<b>" + registeringUser.getUsername() + "</b>" + "</font> <font> already obtained by some other user, try a different username</font>";
                 displayInformationMessageDialog("Registration fail", informationMessage);
@@ -207,8 +207,8 @@ public class RegistrationActivity extends BaseActivity {
      * Switch to home activity
      * This method will be call after successful login
      */
-    private void navigateToHome() {
-        Intent intent = new Intent(RegistrationActivity.this, DrawerActivity.class);
+    private void navigateToSetup() {
+        Intent intent = new Intent(RegistrationActivity.this, SetupActivity.class);
         RegistrationActivity.this.startActivity(intent);
         RegistrationActivity.this.finish();
     }

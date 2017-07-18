@@ -8,8 +8,10 @@ import android.widget.TextView;
 
 import com.score.rahasak.R;
 import com.score.rahasak.exceptions.NoUserException;
+import com.score.rahasak.pojo.BankUser;
 import com.score.rahasak.remote.SenzService;
 import com.score.rahasak.utils.PreferenceUtils;
+import com.score.senzc.pojos.User;
 
 /**
  * Splash activity, send login query from here
@@ -48,10 +50,13 @@ public class SplashActivity extends BaseActivity {
         // determine where to go
         // start service
         try {
-            PreferenceUtils.getUser(this);
+            User user = PreferenceUtils.getUser(this);
 
-            // have user, so move to home
-            navigateToHome();
+            if(!PreferenceUtils.getSignatureFileName(this).isEmpty()) {
+                navigateToHome();
+            }else {
+                navigateSetup();
+            }
         } catch (NoUserException e) {
             e.printStackTrace();
             navigateToSplash();
@@ -74,6 +79,15 @@ public class SplashActivity extends BaseActivity {
     private void navigateRegistration() {
         // no user, so move to registration
         Intent intent = new Intent(this, RegistrationActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        startActivity(intent);
+        overridePendingTransition(R.anim.right_in, R.anim.right_out);
+        finish();
+    }
+
+    private void navigateSetup() {
+        // not setup banking info, so move to setup page
+        Intent intent = new Intent(this, SetupActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         startActivity(intent);
         overridePendingTransition(R.anim.right_in, R.anim.right_out);

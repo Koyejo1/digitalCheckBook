@@ -1,6 +1,7 @@
 package com.score.rahasak.ui;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Typeface;
@@ -25,15 +26,29 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.score.rahasak.R;
+import com.score.rahasak.application.SenzApplication;
+import com.score.rahasak.db.SenzorsDbSource;
+import com.score.rahasak.enums.BlobType;
+import com.score.rahasak.enums.DeliveryState;
 import com.score.rahasak.exceptions.NoUserException;
+import com.score.rahasak.pojo.Check;
 import com.score.rahasak.pojo.DrawerItem;
+import com.score.rahasak.pojo.Secret;
+import com.score.rahasak.pojo.SecretUser;
+import com.score.rahasak.utils.ImageUtils;
 import com.score.rahasak.utils.PreferenceUtils;
+import com.score.rahasak.utils.SenzUtils;
+import com.score.senzc.enums.SenzTypeEnum;
+import com.score.senzc.pojos.Senz;
 import com.score.senzc.pojos.User;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 
-public class DrawerActivity extends AppCompatActivity implements View.OnClickListener {
+public class DrawerActivity extends BaseActivity implements View.OnClickListener {
+
+    protected static final String TAG = DrawerActivity.class.getName();
 
     private Toolbar toolbar;
     private DrawerLayout drawerLayout;
@@ -64,13 +79,15 @@ public class DrawerActivity extends AppCompatActivity implements View.OnClickLis
         setupActionBar();
         setupDrawer();
         initDrawerList();
-        loadRahas();
+        loadAllChecks();
     }
 
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
-        if (intent.hasExtra("SENDER")) {
+        if (intent.hasExtra("CHECK")) {
+            loadAllChecks();
+        }else if (intent.hasExtra("SENDER")) {
             loadFriends();
         }
     }
@@ -129,6 +146,8 @@ public class DrawerActivity extends AppCompatActivity implements View.OnClickLis
         // initialize drawer content
         // need to determine selected item according to the currently selected sensor type
         drawerItemList = new ArrayList();
+        drawerItemList.add(new DrawerItem("New Check", R.drawable.rahaslogo, R.drawable.rahaslogo, true));
+        drawerItemList.add(new DrawerItem("Checks", R.drawable.rahaslogo, R.drawable.rahaslogo, false));
         drawerItemList.add(new DrawerItem("Secrets", R.drawable.rahaslogo, R.drawable.rahaslogo, true));
         drawerItemList.add(new DrawerItem("Friends", R.drawable.rahaslogo, R.drawable.rahaslogo, false));
         drawerItemList.add(new DrawerItem("Invite", R.drawable.rahaslogo, R.drawable.rahaslogo, false));
@@ -190,10 +209,14 @@ public class DrawerActivity extends AppCompatActivity implements View.OnClickLis
             drawerLayout.closeDrawer(drawerContainer);
 
             if (position == 0) {
-                loadRahas();
+                loadNewCheckForm();
             } else if (position == 1) {
-                loadFriends();
+                loadAllChecks();
             } else if (position == 2) {
+                loadRahas();
+            } else if (position == 3) {
+                loadFriends();
+            } else if (position == 4) {
                 loadInvite();
             }
         }
@@ -207,10 +230,46 @@ public class DrawerActivity extends AppCompatActivity implements View.OnClickLis
         clearAboutText();
 
         unSelectDrawerItems();
-        drawerItemList.get(0).setSelected(true);
+        drawerItemList.get(2).setSelected(true);
         drawerAdapter.notifyDataSetChanged();
 
         SecretListFragment fragment = new SecretListFragment();
+
+        // fragment transitions
+        // Replace whatever is in the fragment_container view with this fragment,
+        // and add the transaction to the back stack so the user can navigate back
+        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+        transaction.replace(R.id.main, fragment);
+        transaction.commit();
+    }
+
+    private void loadAllChecks() {
+        titleText.setText("Checks");
+        clearAboutText();
+
+        unSelectDrawerItems();
+        drawerItemList.get(1).setSelected(true);
+        drawerAdapter.notifyDataSetChanged();
+
+        CheckListFragment fragment = new CheckListFragment();
+
+        // fragment transitions
+        // Replace whatever is in the fragment_container view with this fragment,
+        // and add the transaction to the back stack so the user can navigate back
+        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+        transaction.replace(R.id.main, fragment);
+        transaction.commit();
+    }
+
+    private void loadNewCheckForm() {
+        titleText.setText("New Check Form");
+        clearAboutText();
+
+        unSelectDrawerItems();
+        drawerItemList.get(0).setSelected(true);
+        drawerAdapter.notifyDataSetChanged();
+
+        NewCheckFragment fragment = new NewCheckFragment();
 
         // fragment transitions
         // Replace whatever is in the fragment_container view with this fragment,
@@ -228,7 +287,7 @@ public class DrawerActivity extends AppCompatActivity implements View.OnClickLis
         clearAboutText();
 
         unSelectDrawerItems();
-        drawerItemList.get(1).setSelected(true);
+        drawerItemList.get(3).setSelected(true);
         drawerAdapter.notifyDataSetChanged();
 
         FriendListFragment fragment = new FriendListFragment();
@@ -246,7 +305,7 @@ public class DrawerActivity extends AppCompatActivity implements View.OnClickLis
         clearAboutText();
 
         unSelectDrawerItems();
-        drawerItemList.get(2).setSelected(true);
+        drawerItemList.get(4).setSelected(true);
         drawerAdapter.notifyDataSetChanged();
 
         InviteFragment fragment = new InviteFragment();
@@ -294,4 +353,141 @@ public class DrawerActivity extends AppCompatActivity implements View.OnClickLis
         aboutText.setTypeface(typeface, Typeface.NORMAL);
     }
 
+
+    /**
+     * Util methods
+     */
+    public void sendPhotoCheckSenz(final byte[] image, SecretUser secretUser, final Context context, Check check) {
+        // compose senz
+        Long timestamp = (System.currentTimeMillis() / 1000);
+        String uid = SenzUtils.getUid(this, timestamp.toString());
+
+        // stream on senz
+        // stream content
+        // stream off senz
+        Senz startStreamSenz = getStartStreamSenz(uid, timestamp, secretUser);
+        ArrayList<Senz> photoSenzList = getPhotoStreamSenz(image, context, uid, timestamp, secretUser);
+        Senz stopStreamSenz = getStopStreamSenz(uid, timestamp, secretUser, check);
+
+        // populate list
+        ArrayList<Senz> senzList = new ArrayList<>();
+        senzList.add(startStreamSenz);
+        senzList.addAll(photoSenzList);
+        senzList.add(stopStreamSenz);
+
+        sendInOrder(senzList);
+    }
+
+    /**
+     * Decompose image stream in to multiple data/stream senz's
+     *
+     * @param image   image content
+     * @param context app context
+     * @param uid     unique id
+     * @return list of decomposed senz's
+     */
+    public ArrayList<Senz> getPhotoStreamSenz(byte[] image, Context context, String uid, Long timestamp, SecretUser secretUser) {
+        String imageString = ImageUtils.encodeBitmap(image);
+
+//        Secret newSecret = new Secret("", BlobType.IMAGE, secretUser, false);
+//        newSecret.setTimeStamp(timestamp);
+//        newSecret.setId(uid);
+//        newSecret.setMissed(false);
+//        newSecret.setDeliveryState(DeliveryState.PENDING);
+//        new SenzorsDbSource(context).createSecret(newSecret);
+
+//        String imgName = uid + ".jpg";
+//        ImageUtils.saveImg(imgName, image);
+
+        ArrayList<Senz> senzList = new ArrayList<>();
+        String[] packets = split(imageString, 1024);
+
+        for (String packet : packets) {
+            // new senz
+            String id = "_ID";
+            String signature = "_SIGNATURE";
+            SenzTypeEnum senzType = SenzTypeEnum.STREAM;
+
+            // create senz attributes
+            HashMap<String, String> senzAttributes = new HashMap<>();
+            senzAttributes.put("time", timestamp.toString());
+            senzAttributes.put("cam", packet.trim());
+            senzAttributes.put("uid", uid);
+
+            Senz _senz = new Senz(id, signature, senzType, null, new User(secretUser.getId(), secretUser.getUsername()), senzAttributes);
+            senzList.add(_senz);
+        }
+
+        return senzList;
+    }
+
+    /**
+     * Create start stream senz
+     *
+     * @return senz
+     */
+    public Senz getStartStreamSenz(String uid, Long timestamp, SecretUser secretUser) {
+        // create senz attributes
+        HashMap<String, String> senzAttributes = new HashMap<>();
+        senzAttributes.put("time", timestamp.toString());
+        senzAttributes.put("cam", "on");
+        senzAttributes.put("uid", uid);
+
+        // new senz
+        String id = "_ID";
+        String signature = "_SIGNATURE";
+        SenzTypeEnum senzType = SenzTypeEnum.STREAM;
+
+        return new Senz(id, signature, senzType, null, new User(secretUser.getId(), secretUser.getUsername()), senzAttributes);
+    }
+
+    /**
+     * Create stop stream senz
+     *
+     * @return senz
+     */
+    public Senz getStopStreamSenz(String uid, Long timestamp, SecretUser secretUser, Check check) {
+        // create senz attributes
+        HashMap<String, String> senzAttributes = new HashMap<>();
+        senzAttributes.put("time", timestamp.toString());
+        senzAttributes.put("cam", "off");
+        senzAttributes.put("chk", "true");
+        senzAttributes.put("uid", uid);
+        senzAttributes.put("fullname", check.getBankUser().getFullName());
+        senzAttributes.put("amount", check.getAmount().toString());
+        senzAttributes.put("createdAt", check.getTimeCreated().toString());
+
+        // new senz
+        String id = "_ID";
+        String signature = "_SIGNATURE";
+        SenzTypeEnum senzType = SenzTypeEnum.STREAM;
+
+        return new Senz(id, signature, senzType, null, new User(secretUser.getId(), secretUser.getUsername()), senzAttributes);
+    }
+
+    private String[] split(String src, int len) {
+        String[] result = new String[(int) Math.ceil((double) src.length() / (double) len)];
+        for (int i = 0; i < result.length; i++)
+            result[i] = src.substring(i * len, Math.min(src.length(), (i + 1) * len));
+        return result;
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        Log.d(TAG, "Bind to senz service");
+        bindToService();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        // unbind from service
+        if (isServiceBound) {
+            Log.d(TAG, "Unbind to senz service");
+            unbindService(senzServiceConnection);
+
+            isServiceBound = false;
+        }
+    }
 }

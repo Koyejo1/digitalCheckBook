@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Rahasak</string>
+    <string name="app_name">Digital Check Book</string>
     <string name="sample_address">No 35, Pullair kovil road \n Matale</string>
     <string name="preference_file_key">com.score.senz.PREFERENCE_FILE_KEY</string>
     <string name="new_senz">SenZ received</string>
@@ -36,4 +36,24 @@
     <string name="sound_request">Incoming mic request from :</string>
     <string name="rahasak">Rahasak</string>
     <string name="connecting_with_server_error">Connection with server...</string>
+    <string name="title_activity_setup">SetupActivity</string>
+    <string name="setup_button_text">Done</string>
+    <string name="acc_full_name">Full name</string>
+    <string name="acc_no">Account no.</string>
+    <string name="acc_nic">Nic/Passport</string>
+    <string name="acc_sig">Signature</string>
+    <string name="signature_button_text">Add Digital Sigature</string>
+    <string name="title_activity_capture_signature">CaptureSignatureActivity</string>
+    <string name="degital_signature">Digital Singature Captured:</string>
+    <string name="check_generate_btn">Generate Check</string>
+    <string name="check_send_btn">Send</string>
+    <string name="amount_label">Amount</string>
+    <string name="check_preview_btn">Preview Check</string>
+    <string name="setup_check_form">Fill the below form to generate and send a check:</string>
+
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="title_activity_check_full_screen">CheckFullScreenActivity</string>
+    <string name="title_activity_check_detail">CheckDetailActivity</string>
 </resources>
