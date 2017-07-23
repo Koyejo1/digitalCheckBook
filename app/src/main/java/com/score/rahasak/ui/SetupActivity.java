@@ -20,21 +20,23 @@ import android.widget.Toast;
 import com.score.rahasak.R;
 import com.score.rahasak.exceptions.InvalidInputFieldsException;
 import com.score.rahasak.exceptions.NoUserException;
-import com.score.rahasak.pojo.BankUser;
 import com.score.rahasak.utils.ActivityUtils;
+import com.score.rahasak.utils.CheckUtils;
 import com.score.rahasak.utils.ImageUtils;
 import com.score.rahasak.utils.PreferenceUtils;
 import com.score.senzc.pojos.User;
 
 public class SetupActivity  extends BaseActivity {
 
-    private static final String TAG = RegistrationActivity.class.getName();
+    private static final String TAG = SetupActivity.class.getName();
 
     // ui controls
     private Button doneBtn;
     private Toolbar toolbar;
     private ImageView signImage;
     private Button getSignBtn;
+
+    // saved digital sign
     private byte[] signImageByteArray;
 
     @Override
@@ -82,17 +84,10 @@ public class SetupActivity  extends BaseActivity {
         getSignBtn.setOnClickListener(onButtonClick);
     }
 
-    Button.OnClickListener onButtonClick = new Button.OnClickListener() {
-        @Override
-        public void onClick(View v) {
-            Intent i = new Intent(SetupActivity.this, CaptureSignatureActivity.class);
-            startActivityForResult(i, 0);
-        }
-    };
-
     /**
      * Sign-up button action,
-     * create user and validate fields from here
+     *  1. check if user has add the digital signature
+     *  2. Navigate to home page
      */
     private void onClickRegister() {
             if(signImageByteArray != null) {
@@ -115,6 +110,23 @@ public class SetupActivity  extends BaseActivity {
         SetupActivity.this.finish();
     }
 
+    /**
+     * Take user to full screen signing page
+     */
+    Button.OnClickListener onButtonClick = new Button.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            Intent i = new Intent(SetupActivity.this, CaptureSignatureActivity.class);
+            startActivityForResult(i, 0);
+        }
+    };
+
+    /**
+     * Return value from the CaptureSignatureActivity ondestroy
+     * @param requestCode
+     * @param resultCode
+     * @param data
+     */
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (resultCode == 1) {

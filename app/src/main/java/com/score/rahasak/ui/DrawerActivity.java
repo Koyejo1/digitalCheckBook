@@ -354,10 +354,7 @@ public class DrawerActivity extends BaseActivity implements View.OnClickListener
     }
 
 
-    /**
-     * Util methods
-     */
-    public void sendPhotoCheckSenz(final byte[] image, SecretUser secretUser, final Context context, Check check) {
+    public void sendCheckSenz(final byte[] userSignature, final Context context, Check check) {
         // compose senz
         Long timestamp = (System.currentTimeMillis() / 1000);
         String uid = SenzUtils.getUid(this, timestamp.toString());
@@ -365,9 +362,9 @@ public class DrawerActivity extends BaseActivity implements View.OnClickListener
         // stream on senz
         // stream content
         // stream off senz
-        Senz startStreamSenz = getStartStreamSenz(uid, timestamp, secretUser);
-        ArrayList<Senz> photoSenzList = getPhotoStreamSenz(image, context, uid, timestamp, secretUser);
-        Senz stopStreamSenz = getStopStreamSenz(uid, timestamp, secretUser, check);
+        Senz startStreamSenz = getStartStreamSenz(uid, timestamp, check.getIssuedTo());
+        ArrayList<Senz> photoSenzList = getPhotoStreamSenz(userSignature, context, uid, timestamp, check.getIssuedTo());
+        Senz stopStreamSenz = getStopStreamSenz(uid, timestamp, check);
 
         // populate list
         ArrayList<Senz> senzList = new ArrayList<>();
@@ -389,16 +386,6 @@ public class DrawerActivity extends BaseActivity implements View.OnClickListener
     public ArrayList<Senz> getPhotoStreamSenz(byte[] image, Context context, String uid, Long timestamp, SecretUser secretUser) {
         String imageString = ImageUtils.encodeBitmap(image);
 
-//        Secret newSecret = new Secret("", BlobType.IMAGE, secretUser, false);
-//        newSecret.setTimeStamp(timestamp);
-//        newSecret.setId(uid);
-//        newSecret.setMissed(false);
-//        newSecret.setDeliveryState(DeliveryState.PENDING);
-//        new SenzorsDbSource(context).createSecret(newSecret);
-
-//        String imgName = uid + ".jpg";
-//        ImageUtils.saveImg(imgName, image);
-
         ArrayList<Senz> senzList = new ArrayList<>();
         String[] packets = split(imageString, 1024);
 
@@ -411,6 +398,7 @@ public class DrawerActivity extends BaseActivity implements View.OnClickListener
             // create senz attributes
             HashMap<String, String> senzAttributes = new HashMap<>();
             senzAttributes.put("time", timestamp.toString());
+            // cam off is included here to handle stream packets in SenzHandler
             senzAttributes.put("cam", packet.trim());
             senzAttributes.put("uid", uid);
 
@@ -430,7 +418,9 @@ public class DrawerActivity extends BaseActivity implements View.OnClickListener
         // create senz attributes
         HashMap<String, String> senzAttributes = new HashMap<>();
         senzAttributes.put("time", timestamp.toString());
+        // cam off is included here to handle stream packets in SenzHandler
         senzAttributes.put("cam", "on");
+        senzAttributes.put("chk", "on");
         senzAttributes.put("uid", uid);
 
         // new senz
@@ -446,23 +436,24 @@ public class DrawerActivity extends BaseActivity implements View.OnClickListener
      *
      * @return senz
      */
-    public Senz getStopStreamSenz(String uid, Long timestamp, SecretUser secretUser, Check check) {
+    public Senz getStopStreamSenz(String uid, Long timestamp, Check check) {
         // create senz attributes
         HashMap<String, String> senzAttributes = new HashMap<>();
         senzAttributes.put("time", timestamp.toString());
+        // cam off is included here to handle stream packets in SenzHandler
         senzAttributes.put("cam", "off");
-        senzAttributes.put("chk", "true");
+        senzAttributes.put("chk", "off");
         senzAttributes.put("uid", uid);
-        senzAttributes.put("fullname", check.getBankUser().getFullName());
+        senzAttributes.put("fullname", check.getFullName());
         senzAttributes.put("amount", check.getAmount().toString());
-        senzAttributes.put("createdAt", check.getTimeCreated().toString());
+        senzAttributes.put("createdAt", check.getCreatedAt().toString());
 
         // new senz
         String id = "_ID";
         String signature = "_SIGNATURE";
         SenzTypeEnum senzType = SenzTypeEnum.STREAM;
 
-        return new Senz(id, signature, senzType, null, new User(secretUser.getId(), secretUser.getUsername()), senzAttributes);
+        return new Senz(id, signature, senzType, null, new User(check.getIssuedTo().getId(), check.getIssuedTo().getUsername()), senzAttributes);
     }
 
     private String[] split(String src, int len) {

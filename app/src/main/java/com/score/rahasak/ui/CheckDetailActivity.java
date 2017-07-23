@@ -35,9 +35,9 @@ import com.score.rahasak.application.SenzApplication;
 import com.score.rahasak.db.SenzorsDbSource;
 import com.score.rahasak.enums.IntentType;
 import com.score.rahasak.exceptions.NoUserException;
-import com.score.rahasak.pojo.BankUser;
 import com.score.rahasak.pojo.Check;
 import com.score.rahasak.pojo.SecretUser;
+import com.score.rahasak.utils.CheckUtils;
 import com.score.rahasak.utils.ImageUtils;
 import com.score.rahasak.utils.PhoneBookUtil;
 import com.score.rahasak.utils.PreferenceUtils;
@@ -75,29 +75,25 @@ public class CheckDetailActivity extends BaseActivity implements View.OnClickLis
     private SecretUser selectedUser;
     private SecretUser owner;
     private Check activeCheck;
-    NumberFormat nf;
+    private NumberFormat nf;
 
+    // Fonts
     private Typeface typeface;
     protected Typeface typefaceThin;
 
+    // db access
     private SenzorsDbSource dbSource;
-
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE);
         setContentView(R.layout.activity_check_detail);
 
         dbSource = new SenzorsDbSource(this);
         friendList = dbSource.getSecretUserList();
-        activeCheck = dbSource.getCheck(getIntent().getExtras().getString("check_url"));
-        nf = NumberFormat.getCurrencyInstance();
-        DecimalFormatSymbols decimalFormatSymbols = ((DecimalFormat) nf).getDecimalFormatSymbols();
-        decimalFormatSymbols.setCurrencySymbol("");
-        ((DecimalFormat) nf).setDecimalFormatSymbols(decimalFormatSymbols);
+        activeCheck = dbSource.getCheck(getIntent().getExtras().getString("id"));
+        nf = CheckUtils.getCheckDateFormater();
 
         setupToolbar();
         setupActionBar();
@@ -234,10 +230,10 @@ public class CheckDetailActivity extends BaseActivity implements View.OnClickLis
     private void initUi() {
         senderName = (EditText) findViewById(R.id.sender_name);
         senderName.setTypeface(typefaceThin, Typeface.NORMAL);
-        if (activeCheck.getSender().getPhone() != null && !activeCheck.getSender().getPhone().isEmpty()) {
-            senderName.setText(PhoneBookUtil.getContactName(this, activeCheck.getSender().getPhone()));
+        if (activeCheck.getIssuedFrom().getPhone() != null && !activeCheck.getIssuedFrom().getPhone().isEmpty()) {
+            senderName.setText(PhoneBookUtil.getContactName(this, activeCheck.getIssuedFrom().getPhone()));
         } else {
-            senderName.setText(activeCheck.getSender().getUsername());
+            senderName.setText(activeCheck.getIssuedFrom().getUsername());
         }
 
 
@@ -257,8 +253,16 @@ public class CheckDetailActivity extends BaseActivity implements View.OnClickLis
         previewBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent i = new Intent(CheckDetailActivity.this, CheckFullScreenPreviewActivity.class);
-                i.putExtra("url", activeCheck.getCheckUrl().trim());
+                Intent i = new Intent(CheckDetailActivity.this, CheckFullScreenActivity.class);
+                i.putExtra("id", activeCheck.getCheckId());
+
+                // Check Attributes
+                i.putExtra("fullname", activeCheck.getFullName());
+                i.putExtra("amount", activeCheck.getAmount().toString());
+                i.putExtra("date", activeCheck.getCreatedAt().toString());
+                i.putExtra("signatureUrl", activeCheck.getSignatureUrl());
+
+                // Open preview
                 CheckDetailActivity.this.startActivity(i);
             }
         });
@@ -270,9 +274,10 @@ public class CheckDetailActivity extends BaseActivity implements View.OnClickLis
                 if(selectedUser != null) {
                     try {
                         ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                        ImageUtils.getImageBitmapFromInternalStorage(activeCheck.getCheckUrl(), CheckDetailActivity.this).compress(Bitmap.CompressFormat.JPEG, 100, stream);
-                        byte[] byteArray = compress(stream.toByteArray());
-                        sendPhotoCheckSenz(byteArray, selectedUser, CheckDetailActivity.this, activeCheck);
+                        ImageUtils.getImageBitmapFromInternalStorage(activeCheck.getSignatureUrl(), CheckDetailActivity.this).compress(Bitmap.CompressFormat.PNG, 100, stream);
+                        byte[] byteArray = CheckUtils.compress(stream.toByteArray());
+                        verifyCheckSenz(byteArray, selectedUser, CheckDetailActivity.this, activeCheck);
+                        Toast.makeText(CheckDetailActivity.this, "Your check has been sent", Toast.LENGTH_LONG).show();
                     } catch (Exception ex) {
                         ex.printStackTrace();
                     }
@@ -281,23 +286,6 @@ public class CheckDetailActivity extends BaseActivity implements View.OnClickLis
                 }
             }
         });
-    }
-
-    public static byte[] compress(byte[] data) throws IOException {
-        Deflater deflater = new Deflater();
-        deflater.setInput(data);
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream(data.length);
-        deflater.finish();
-        byte[] buffer = new byte[1024];
-        while (!deflater.finished()) {
-            int count = deflater.deflate(buffer); // returns the generated code... index
-            outputStream.write(buffer, 0, count);
-        }
-        outputStream.close();
-        byte[] output = outputStream.toByteArray();
-        Log.d(TAG, "Original: " + data.length / 1024 + " Kb");
-        Log.d(TAG, "Compressed: " + output.length / 1024 + " Kb");
-        return output;
     }
 
     @Override
@@ -310,7 +298,7 @@ public class CheckDetailActivity extends BaseActivity implements View.OnClickLis
     /**
      * Util methods
      */
-    public void sendPhotoCheckSenz(final byte[] image, SecretUser secretUser, final Context context, Check check) {
+    public void verifyCheckSenz(final byte[] image, SecretUser secretUser, final Context context, Check check) {
         // compose senz
         Long timestamp = (System.currentTimeMillis() / 1000);
         String uid = SenzUtils.getUid(this, timestamp.toString());
@@ -341,16 +329,6 @@ public class CheckDetailActivity extends BaseActivity implements View.OnClickLis
      */
     public ArrayList<Senz> getPhotoStreamSenz(byte[] image, Context context, String uid, Long timestamp, SecretUser secretUser) {
         String imageString = ImageUtils.encodeBitmap(image);
-
-//        Secret newSecret = new Secret("", BlobType.IMAGE, secretUser, false);
-//        newSecret.setTimeStamp(timestamp);
-//        newSecret.setId(uid);
-//        newSecret.setMissed(false);
-//        newSecret.setDeliveryState(DeliveryState.PENDING);
-//        new SenzorsDbSource(context).createSecret(newSecret);
-
-//        String imgName = uid + ".jpg";
-//        ImageUtils.saveImg(imgName, image);
 
         ArrayList<Senz> senzList = new ArrayList<>();
         String[] packets = split(imageString, 1024);
@@ -384,8 +362,11 @@ public class CheckDetailActivity extends BaseActivity implements View.OnClickLis
         HashMap<String, String> senzAttributes = new HashMap<>();
         senzAttributes.put("time", timestamp.toString());
         senzAttributes.put("cam", "on");
-        senzAttributes.put("uid", uid);
 
+        senzAttributes.put("chk", "on");
+        senzAttributes.put("chk_type_verify", "true");
+
+        senzAttributes.put("uid", uid);
         // new senz
         String id = "_ID";
         String signature = "_SIGNATURE";
@@ -404,11 +385,18 @@ public class CheckDetailActivity extends BaseActivity implements View.OnClickLis
         HashMap<String, String> senzAttributes = new HashMap<>();
         senzAttributes.put("time", timestamp.toString());
         senzAttributes.put("cam", "off");
-        senzAttributes.put("chk", "true");
+
+        senzAttributes.put("chk", "off");
+        senzAttributes.put("chk_type_verify", "true");
+
         senzAttributes.put("uid", uid);
-        senzAttributes.put("fullname", check.getBankUser().getFullName());
+        senzAttributes.put("fullname", check.getFullName());
         senzAttributes.put("amount", check.getAmount().toString());
-        senzAttributes.put("createdAt", check.getTimeCreated().toString());
+        senzAttributes.put("createdAt", check.getCreatedAt().toString());
+
+        // Setting original sender and receiver for check so not to get confused in handler
+        senzAttributes.put("chk_receiver", check.getIssuedFrom().getUsername());
+        senzAttributes.put("chk_sender", check.getIssuedFrom().getUsername());
 
         // new senz
         String id = "_ID";

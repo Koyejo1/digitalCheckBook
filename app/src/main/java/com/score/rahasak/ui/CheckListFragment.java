@@ -28,7 +28,6 @@ import com.score.rahasak.application.IntentProvider;
 import com.score.rahasak.db.SenzorsDbSource;
 import com.score.rahasak.enums.IntentType;
 import com.score.rahasak.exceptions.NoUserException;
-import com.score.rahasak.pojo.BankUser;
 import com.score.rahasak.pojo.Check;
 import com.score.rahasak.pojo.Secret;
 import com.score.rahasak.utils.PreferenceUtils;
@@ -125,7 +124,7 @@ public class CheckListFragment extends ListFragment implements AdapterView.OnIte
 
     private void refreshList() {
         if(allChecksList != null && allChecksList.size() > 0) {
-            allChecksList.addAll(dbSource.getLatestChecks(allChecksList.get(0).getTimeCreated()));
+            allChecksList.addAll(dbSource.getLatestChecks(allChecksList.get(0).getCreatedAt()));
         }else{
             allChecksList.addAll(dbSource.getChecks());
         }
@@ -136,7 +135,10 @@ public class CheckListFragment extends ListFragment implements AdapterView.OnIte
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
         Check check = allChecksList.get(position);
         Intent intent = new Intent(this.getActivity(), CheckDetailActivity.class);
-        intent.putExtra("check_url", check.getCheckUrl());
+
+        // Check Attributes
+        intent.putExtra("id", check.getCheckId());
+
         startActivity(intent);
     }
 
@@ -196,7 +198,7 @@ public class CheckListFragment extends ListFragment implements AdapterView.OnIte
                 adapter.notifyDataSetChanged();
 
                 // delete from db
-                new SenzorsDbSource(getActivity()).deleteCheck(check.getCheckUrl());
+                new SenzorsDbSource(getActivity()).deleteCheck(check.getCheckId());
 
                 actionBarDelete.setVisibility(View.GONE);
             }

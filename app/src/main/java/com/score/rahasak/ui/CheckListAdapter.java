@@ -17,6 +17,7 @@ import com.score.rahasak.R;
 import com.score.rahasak.enums.BlobType;
 import com.score.rahasak.pojo.Check;
 import com.score.rahasak.pojo.Secret;
+import com.score.rahasak.utils.CheckUtils;
 import com.score.rahasak.utils.ImageUtils;
 import com.score.rahasak.utils.PhoneBookUtil;
 import com.score.rahasak.utils.TimeUtils;
@@ -28,21 +29,19 @@ import java.util.ArrayList;
 
 class CheckListAdapter extends BaseAdapter {
 
+    private static final String TAG = CheckListAdapter.class.getName();
+
+    // Ui controls
     private Context context;
     private ArrayList<Check> checkList;
     private Typeface typeface;
-    NumberFormat nf;
+    private NumberFormat nf;
 
     CheckListAdapter(Context _context, ArrayList<Check> secretList) {
         this.context = _context;
         this.checkList = secretList;
-
-        typeface = Typeface.createFromAsset(context.getAssets(), "fonts/GeosansLight.ttf");
-
-        nf = NumberFormat.getCurrencyInstance();
-        DecimalFormatSymbols decimalFormatSymbols = ((DecimalFormat) nf).getDecimalFormatSymbols();
-        decimalFormatSymbols.setCurrencySymbol("");
-        ((DecimalFormat) nf).setDecimalFormatSymbols(decimalFormatSymbols);
+        this.typeface = Typeface.createFromAsset(context.getAssets(), "fonts/GeosansLight.ttf");
+        this.nf = CheckUtils.getCheckDateFormater();
     }
 
     @Override
@@ -97,15 +96,15 @@ class CheckListAdapter extends BaseAdapter {
 
     private void setUpRow(Check check, ViewHolder viewHolder) {
         // set username/name
-        if (check.getSender().getPhone() != null && !check.getSender().getPhone().isEmpty()) {
-            viewHolder.sender.setText("Check from: " + PhoneBookUtil.getContactName(context, check.getSender().getPhone()));
+        if (check.getIssuedFrom().getPhone() != null && !check.getIssuedFrom().getPhone().isEmpty()) {
+            viewHolder.sender.setText("Check from: " + PhoneBookUtil.getContactName(context, check.getIssuedFrom().getPhone()));
         } else {
-            viewHolder.sender.setText("Check from: @" + check.getSender().getUsername());
+            viewHolder.sender.setText("Check from: @" + check.getIssuedFrom().getUsername());
         }
         // set username/name
         viewHolder.message.setText("Total: $"+ nf.format(check.getAmount()));
-        if (check.getTimeCreated() != null) {
-            viewHolder.sentTime.setText(TimeUtils.getTimeInWords(check.getTimeCreated()/1000));
+        if (check.getCreatedAt() != null) {
+            viewHolder.sentTime.setText(TimeUtils.getTimeInWords(check.getCreatedAt()/1000));
         }
     }
 

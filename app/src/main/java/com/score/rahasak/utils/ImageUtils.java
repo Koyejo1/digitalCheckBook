@@ -297,4 +297,8 @@ public class ImageUtils {
             return null;
         }
     }
+
+    public static boolean deleteImageFromInternalStorage(String name, Context context){
+        return context.deleteFile(name);
+    }
 }

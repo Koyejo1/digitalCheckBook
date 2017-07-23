@@ -202,7 +202,6 @@
             android:name=".ui.CheckDetailActivity"
             android:label="@string/title_activity_check_detail"
             android:theme="@style/MyMaterialTheme" />
-        <activity android:name=".ui.CheckFullScreenPreviewActivity"></activity>
     </application>
 
 </manifest>

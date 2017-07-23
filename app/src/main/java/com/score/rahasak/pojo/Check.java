@@ -7,38 +7,49 @@ import com.score.senzc.pojos.User;
  */
 
 public class Check {
-    private String checkUrl;
-    private BankUser bankUser;
-    private Long timeCreated;
+    private String id;
+    private String fullName;
+    private String signatureUrl;
+    private SecretUser issuedTo;
+    private SecretUser issuedFrom;
+    private Long createdAt;
     private Long amount;
-    private SecretUser sender;
 
-
-    public Check(BankUser bankUser, String checkUrl, Long timestamp, Long amount, SecretUser sender){
-        this.checkUrl = checkUrl;
-        this.bankUser = bankUser;
-        this.timeCreated = timestamp;
+    public Check(String id, SecretUser issuedTo, SecretUser issuedFrom, String fullName, String signatureUrl, Long amount, Long createAtTimeStamp){
+        this.id = id;
+        this.issuedTo = issuedTo;
+        this.issuedFrom = issuedFrom;
+        this.fullName = fullName;
+        this.signatureUrl = signatureUrl;
+        this.createdAt = createAtTimeStamp;
         this.amount = amount;
-        this.sender = sender;
     }
 
-    public String getCheckUrl() {
-        return checkUrl;
+    public String getCheckId() {
+        return id;
     }
 
-    public BankUser getBankUser() {
-        return bankUser;
+    public String getSignatureUrl() {
+        return signatureUrl;
     }
 
-    public Long getTimeCreated() {
-        return timeCreated;
+    public String getFullName() {
+        return fullName;
+    }
+
+    public SecretUser getIssuedTo() {
+        return issuedTo;
+    }
+
+    public SecretUser getIssuedFrom() {
+        return issuedFrom;
+    }
+
+    public Long getCreatedAt() {
+        return createdAt;
     }
 
     public Long getAmount() {
         return amount;
-    }
-
-    public SecretUser getSender() {
-        return sender;
     }
 }

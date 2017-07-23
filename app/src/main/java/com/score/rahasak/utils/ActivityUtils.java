@@ -21,7 +21,6 @@ import android.widget.Toast;
 
 import com.score.rahasak.R;
 import com.score.rahasak.exceptions.InvalidInputFieldsException;
-import com.score.rahasak.pojo.BankUser;
 import com.score.senzc.pojos.User;
 
 import java.util.ArrayList;
@@ -90,24 +89,6 @@ public class ActivityUtils {
      */
     public static boolean isValidRegistrationFields(User user) throws InvalidInputFieldsException {
         if (user.getUsername().isEmpty() || user.getUsername().contains("@") || user.getUsername().contains("#") || user.getUsername().contains(" ")) {
-            throw new InvalidInputFieldsException();
-        }
-
-        return true;
-    }
-
-    /**
-     * Validate input fields of setup form,
-     * Need to have
-     * 1. non empty fullname
-     * 2. non empty nic
-     * 3. non empty accno
-     *
-     * @param user BankUser object
-     * @return valid or not
-     */
-    public static boolean isValidSetupFields(BankUser user) throws InvalidInputFieldsException {
-        if (user.getFullName().trim().isEmpty()) {
             throw new InvalidInputFieldsException();
         }
 
@@ -260,12 +241,5 @@ public class ActivityUtils {
         int first = listView.getFirstVisiblePosition();
 
         return (itemId >= first && itemId <= last);
-    }
-
-    public static String getDate(long timestamp) {
-        Calendar cal = Calendar.getInstance(Locale.ENGLISH);
-        cal.setTimeInMillis(timestamp);
-        String date = DateFormat.format("dd-MM-yyyy", cal).toString();
-        return date;
     }
 }

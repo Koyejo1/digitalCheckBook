@@ -5,7 +5,6 @@ import android.content.SharedPreferences;
 
 import com.score.rahasak.R;
 import com.score.rahasak.exceptions.NoUserException;
-import com.score.rahasak.pojo.BankUser;
 import com.score.senzc.pojos.User;
 
 /**

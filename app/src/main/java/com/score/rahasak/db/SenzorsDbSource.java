@@ -8,11 +8,13 @@ import android.util.Log;
 
 import com.score.rahasak.enums.BlobType;
 import com.score.rahasak.enums.DeliveryState;
-import com.score.rahasak.pojo.BankUser;
+import com.score.rahasak.exceptions.NoUserException;
 import com.score.rahasak.pojo.Check;
 import com.score.rahasak.pojo.Permission;
 import com.score.rahasak.pojo.Secret;
 import com.score.rahasak.pojo.SecretUser;
+import com.score.rahasak.utils.ImageUtils;
+import com.score.rahasak.utils.PreferenceUtils;
 import com.score.rahasak.utils.TimeUtils;
 import com.score.senzc.pojos.User;
 
@@ -214,51 +216,52 @@ public class SenzorsDbSource {
     }
 
     public SecretUser getSecretUser(String username) {
-        SQLiteDatabase db = SenzorsDbHelper.getInstance(context).getReadableDatabase();
-        Cursor cursor = db.query(SenzorsDbContract.User.TABLE_NAME, // table
-                null, // columns
-                SenzorsDbContract.User.COLUMN_NAME_USERNAME + " = ?", // constraint
-                new String[]{username}, // prams
-                null, // order by
-                null, // group by
-                null); // join
+        if(username != null) {
+            SQLiteDatabase db = SenzorsDbHelper.getInstance(context).getReadableDatabase();
+            Cursor cursor = db.query(SenzorsDbContract.User.TABLE_NAME, // table
+                    null, // columns
+                    SenzorsDbContract.User.COLUMN_NAME_USERNAME + " = ?", // constraint
+                    new String[]{username}, // prams
+                    null, // order by
+                    null, // group by
+                    null); // join
 
-        if (cursor.moveToFirst()) {
-            // have matching user
-            // so get user data
-            // we return id as password since we no storing users password in database
-            String _userID = cursor.getString(cursor.getColumnIndex(SenzorsDbContract.User._ID));
-            String _username = cursor.getString(cursor.getColumnIndex(SenzorsDbContract.User.COLUMN_NAME_USERNAME));
-            String _phone = cursor.getString(cursor.getColumnIndex(SenzorsDbContract.User.COLUMN_NAME_PHONE));
-            String _pubKey = cursor.getString(cursor.getColumnIndex(SenzorsDbContract.User.COLUMN_NAME_PUBKEY));
-            String _pubKeyHash = cursor.getString(cursor.getColumnIndex(SenzorsDbContract.User.COLUMN_NAME_PUBKEY_HASH));
-            String _image = cursor.getString(cursor.getColumnIndex(SenzorsDbContract.User.COLUMN_NAME_IMAGE));
-            String _givenPermId = cursor.getString(cursor.getColumnIndex(SenzorsDbContract.User.COLUMN_NAME_GIVEN_PERM));
-            String _recvPermId = cursor.getString(cursor.getColumnIndex(SenzorsDbContract.User.COLUMN_NAME_RECV_PERM));
-            String _sessionKey = cursor.getString(cursor.getColumnIndex(SenzorsDbContract.User.COLUMN_NAME_SESSION_KEY));
-            int _isActive = cursor.getInt(cursor.getColumnIndex(SenzorsDbContract.User.COLUMN_NAME_IS_ACTIVE));
-            int _isSmsRequester = cursor.getInt(cursor.getColumnIndex(SenzorsDbContract.User.COLUMN_NAME_IS_SMS_REQUESTER));
+            if (cursor.moveToFirst()) {
+                // have matching user
+                // so get user data
+                // we return id as password since we no storing users password in database
+                String _userID = cursor.getString(cursor.getColumnIndex(SenzorsDbContract.User._ID));
+                String _username = cursor.getString(cursor.getColumnIndex(SenzorsDbContract.User.COLUMN_NAME_USERNAME));
+                String _phone = cursor.getString(cursor.getColumnIndex(SenzorsDbContract.User.COLUMN_NAME_PHONE));
+                String _pubKey = cursor.getString(cursor.getColumnIndex(SenzorsDbContract.User.COLUMN_NAME_PUBKEY));
+                String _pubKeyHash = cursor.getString(cursor.getColumnIndex(SenzorsDbContract.User.COLUMN_NAME_PUBKEY_HASH));
+                String _image = cursor.getString(cursor.getColumnIndex(SenzorsDbContract.User.COLUMN_NAME_IMAGE));
+                String _givenPermId = cursor.getString(cursor.getColumnIndex(SenzorsDbContract.User.COLUMN_NAME_GIVEN_PERM));
+                String _recvPermId = cursor.getString(cursor.getColumnIndex(SenzorsDbContract.User.COLUMN_NAME_RECV_PERM));
+                String _sessionKey = cursor.getString(cursor.getColumnIndex(SenzorsDbContract.User.COLUMN_NAME_SESSION_KEY));
+                int _isActive = cursor.getInt(cursor.getColumnIndex(SenzorsDbContract.User.COLUMN_NAME_IS_ACTIVE));
+                int _isSmsRequester = cursor.getInt(cursor.getColumnIndex(SenzorsDbContract.User.COLUMN_NAME_IS_SMS_REQUESTER));
 
-            Permission givenPerm = getPermission(_givenPermId);
-            Permission recvPerm = getPermission(_recvPermId);
+                Permission givenPerm = getPermission(_givenPermId);
+                Permission recvPerm = getPermission(_recvPermId);
 
-            // clear
-            cursor.close();
+                // clear
+                cursor.close();
 
-            SecretUser secretUser = new SecretUser(_userID, _username);
-            secretUser.setPhone(_phone);
-            secretUser.setPubKey(_pubKey);
-            secretUser.setPubKeyHash(_pubKeyHash);
-            secretUser.setImage(_image);
-            secretUser.setActive(_isActive == 1);
-            secretUser.setGivenPermission(givenPerm);
-            secretUser.setRecvPermission(recvPerm);
-            secretUser.setSMSRequester(_isSmsRequester == 1);
-            secretUser.setSessionKey(_sessionKey);
+                SecretUser secretUser = new SecretUser(_userID, _username);
+                secretUser.setPhone(_phone);
+                secretUser.setPubKey(_pubKey);
+                secretUser.setPubKeyHash(_pubKeyHash);
+                secretUser.setImage(_image);
+                secretUser.setActive(_isActive == 1);
+                secretUser.setGivenPermission(givenPerm);
+                secretUser.setRecvPermission(recvPerm);
+                secretUser.setSMSRequester(_isSmsRequester == 1);
+                secretUser.setSessionKey(_sessionKey);
 
-            return secretUser;
+                return secretUser;
+            }
         }
-
         return null;
     }
 
@@ -787,12 +790,14 @@ public class SenzorsDbSource {
         SQLiteDatabase db = SenzorsDbHelper.getInstance(context).getWritableDatabase();
         // content values to inset
         ContentValues values = new ContentValues();
-        values.put(SenzorsDbContract.Check.COLUMN_NAME_USERNAME, check.getBankUser().getUsername());
-        values.put(SenzorsDbContract.Check.COLUMN_NAME_FULL_NAME, check.getBankUser().getFullName());
-        values.put(SenzorsDbContract.Check.COLUMN_NAME_CHECK_URL, check.getCheckUrl());
-        values.put(SenzorsDbContract.Check.COLUMN_TIMESTAMP, check.getTimeCreated());
+        values.put(SenzorsDbContract.Check.COLUMN_UNIQUE_ID, check.getCheckId());
+        if(check.getIssuedTo() != null)
+        values.put(SenzorsDbContract.Check.COLUMN_NAME_ISSUED_TO, check.getIssuedTo().getUsername());
+        values.put(SenzorsDbContract.Check.COLUMN_NAME_FULL_NAME, check.getFullName());
+        values.put(SenzorsDbContract.Check.COLUMN_NAME_SIGNATURE, check.getSignatureUrl());
+        values.put(SenzorsDbContract.Check.COLUMN_TIMESTAMP, check.getCreatedAt());
         values.put(SenzorsDbContract.Check.COLUMN_NAME_AMOUNT, check.getAmount());
-        values.put(SenzorsDbContract.Check.COLUMN_NAME_CHECK_SENDER, check.getSender().getUsername());
+        values.put(SenzorsDbContract.Check.COLUMN_NAME_ISSUED_FROM, check.getIssuedFrom().getUsername());
 
         // insert the new row, if fails throw an error
         db.insertOrThrow(SenzorsDbContract.Check.TABLE_NAME, null, values);
@@ -808,17 +813,17 @@ public class SenzorsDbSource {
 
         SQLiteDatabase db = SenzorsDbHelper.getInstance(context).getReadableDatabase();
         String query =
-                "SELECT _id, username, check_fullname, check_amount, check_url, check_sender, timestamp " +
+                "SELECT _id, uid, to_username, check_fullname, check_amount, signature_url, from_username, timestamp " +
                         "FROM user_check " +
                         "WHERE timestamp > ?" +
                         "ORDER BY timestamp DESC";
         Cursor cursor = db.rawQuery(query, new String[]{timestamp.toString()});
 
         // check attr
-        String _userId;
+        String _checkId;
         String _userFullName;
         String _username;
-        String _userCheckUrl;
+        String _userSignature;
         Long _secretTimestamp;
         Long _checkAmount;
         String _sender;
@@ -826,18 +831,23 @@ public class SenzorsDbSource {
         // extract attributes
         while (cursor.moveToNext()) {
             // get check attributes
-            _userId = cursor.getString(cursor.getColumnIndex(SenzorsDbContract.Check._ID));
+            _checkId = cursor.getString(cursor.getColumnIndex(SenzorsDbContract.Check.COLUMN_UNIQUE_ID));
             _secretTimestamp = cursor.getLong(cursor.getColumnIndex(SenzorsDbContract.Check.COLUMN_TIMESTAMP));
             _checkAmount = cursor.getLong(cursor.getColumnIndex(SenzorsDbContract.Check.COLUMN_NAME_AMOUNT));
             _userFullName = cursor.getString(cursor.getColumnIndex(SenzorsDbContract.Check.COLUMN_NAME_FULL_NAME));
-            _username = cursor.getString(cursor.getColumnIndex(SenzorsDbContract.Check.COLUMN_NAME_USERNAME));
-            _userCheckUrl = cursor.getString(cursor.getColumnIndex(SenzorsDbContract.Check.COLUMN_NAME_CHECK_URL));
-            _sender = cursor.getString(cursor.getColumnIndex(SenzorsDbContract.Check.COLUMN_NAME_CHECK_SENDER));
+            _username = cursor.getString(cursor.getColumnIndex(SenzorsDbContract.Check.COLUMN_NAME_ISSUED_TO));
+            _userSignature = cursor.getString(cursor.getColumnIndex(SenzorsDbContract.Check.COLUMN_NAME_SIGNATURE));
+            _sender = cursor.getString(cursor.getColumnIndex(SenzorsDbContract.Check.COLUMN_NAME_ISSUED_FROM));
+
+            // Return yourself as receiver instead of null, in this you are the receiver
+            SecretUser receiver = returnDefaultUserIfNull(_username);
+            SecretUser sender = getSecretUser(_sender);
 
             // create check
-            Check check = new Check(new BankUser(_userId, _username, _userFullName), _userCheckUrl, _secretTimestamp, _checkAmount, getSecretUser(_sender));
+            Check check = new Check(_checkId, receiver, sender, _userFullName, _userSignature, _checkAmount, _secretTimestamp);
 
-            // fill check list
+            // fill check list, Don't add unregistered users
+            if(sender != null || (receiver != null && !receiver.getId().equals("_id")))
             checkList.add(check);
         }
 
@@ -858,16 +868,16 @@ public class SenzorsDbSource {
 
         SQLiteDatabase db = SenzorsDbHelper.getInstance(context).getReadableDatabase();
         String query =
-                "SELECT _id, username, check_fullname, check_amount, check_sender, check_url, timestamp " +
+                "SELECT _id, uid, to_username, check_fullname, check_amount, from_username, signature_url, timestamp " +
                         "FROM user_check " +
                         "ORDER BY timestamp DESC";
         Cursor cursor = db.rawQuery(query, null);
 
         // check attr
-        String _userId;
+        String _checkId;
         String _userFullName;
         String _username;
-        String _userCheckUrl;
+        String _userSignature;
         Long _secretTimestamp;
         Long _checkAmount;
         String _sender;
@@ -875,18 +885,23 @@ public class SenzorsDbSource {
         // extract attributes
         while (cursor.moveToNext()) {
             // get check attributes
-            _userId = cursor.getString(cursor.getColumnIndex(SenzorsDbContract.Check._ID));
+            _checkId = cursor.getString(cursor.getColumnIndex(SenzorsDbContract.Check.COLUMN_UNIQUE_ID));
             _secretTimestamp = cursor.getLong(cursor.getColumnIndex(SenzorsDbContract.Check.COLUMN_TIMESTAMP));
             _checkAmount = cursor.getLong(cursor.getColumnIndex(SenzorsDbContract.Check.COLUMN_NAME_AMOUNT));
             _userFullName = cursor.getString(cursor.getColumnIndex(SenzorsDbContract.Check.COLUMN_NAME_FULL_NAME));
-            _username = cursor.getString(cursor.getColumnIndex(SenzorsDbContract.Check.COLUMN_NAME_USERNAME));
-            _userCheckUrl = cursor.getString(cursor.getColumnIndex(SenzorsDbContract.Check.COLUMN_NAME_CHECK_URL));
-            _sender = cursor.getString(cursor.getColumnIndex(SenzorsDbContract.Check.COLUMN_NAME_CHECK_SENDER));
+            _username = cursor.getString(cursor.getColumnIndex(SenzorsDbContract.Check.COLUMN_NAME_ISSUED_TO));
+            _userSignature = cursor.getString(cursor.getColumnIndex(SenzorsDbContract.Check.COLUMN_NAME_SIGNATURE));
+            _sender = cursor.getString(cursor.getColumnIndex(SenzorsDbContract.Check.COLUMN_NAME_ISSUED_FROM));
+
+            // Return yourself as receiver instead of null, in this you are the receiver
+            SecretUser receiver = returnDefaultUserIfNull(_username);
+            SecretUser sender = getSecretUser(_sender);
 
             // create check
-            Check check = new Check(new BankUser(_userId, _username, _userFullName), _userCheckUrl, _secretTimestamp, _checkAmount, getSecretUser(_sender));
+            Check check = new Check(_checkId, receiver, sender, _userFullName, _userSignature, _checkAmount, _secretTimestamp);
 
-            // fill check list
+            // fill check list, Don't add unregistered users
+            if(sender != null || (receiver != null && !receiver.getId().equals("_id")))
             checkList.add(check);
         }
 
@@ -897,25 +912,22 @@ public class SenzorsDbSource {
         return checkList;
     }
 
-
-    public Check getCheck(String checkUrl) {
+    public Check getCheck(String uid) {
         SQLiteDatabase db = SenzorsDbHelper.getInstance(context).getReadableDatabase();
         Cursor cursor = db.query(SenzorsDbContract.Check.TABLE_NAME, // table
                 null, // columns
-                SenzorsDbContract.Check.COLUMN_NAME_CHECK_URL + " = ?", // constraint
-                new String[]{checkUrl}, // prams
+                SenzorsDbContract.Check.COLUMN_UNIQUE_ID + " = ?", // constraint
+                new String[]{uid}, // prams
                 null, // order by
                 null, // group by
                 null); // join
 
 
         // check attr
-        String _userId;
+        String _checkId;
         String _userFullName;
         String _username;
-        String _userAccountNo;
-        String _userNic;
-        String _userCheckUrl;
+        String _userSignature;
         Long _secretTimestamp;
         Long _checkAmount;
         Check check = null;
@@ -923,30 +935,48 @@ public class SenzorsDbSource {
 
         if (cursor.moveToFirst()) {
 
-            _userId = cursor.getString(cursor.getColumnIndex(SenzorsDbContract.Check._ID));
+            _checkId = cursor.getString(cursor.getColumnIndex(SenzorsDbContract.Secret.COLUMN_UNIQUE_ID));
             _secretTimestamp = cursor.getLong(cursor.getColumnIndex(SenzorsDbContract.Check.COLUMN_TIMESTAMP));
             _checkAmount = cursor.getLong(cursor.getColumnIndex(SenzorsDbContract.Check.COLUMN_NAME_AMOUNT));
             _userFullName = cursor.getString(cursor.getColumnIndex(SenzorsDbContract.Check.COLUMN_NAME_FULL_NAME));
-            _username = cursor.getString(cursor.getColumnIndex(SenzorsDbContract.Check.COLUMN_NAME_USERNAME));
-            _userCheckUrl = cursor.getString(cursor.getColumnIndex(SenzorsDbContract.Check.COLUMN_NAME_CHECK_URL));
-            _sender = cursor.getString(cursor.getColumnIndex(SenzorsDbContract.Check.COLUMN_NAME_CHECK_SENDER));
+            _username = cursor.getString(cursor.getColumnIndex(SenzorsDbContract.Check.COLUMN_NAME_ISSUED_TO));
+            _userSignature = cursor.getString(cursor.getColumnIndex(SenzorsDbContract.Check.COLUMN_NAME_SIGNATURE));
+            _sender = cursor.getString(cursor.getColumnIndex(SenzorsDbContract.Check.COLUMN_NAME_ISSUED_FROM));
 
-            // create check
-            check = new Check(new BankUser(_userId, _username, _userFullName), _userCheckUrl, _secretTimestamp, _checkAmount, getSecretUser(_sender));
+            // Return yourself as receiver instead of null, in this you are the receiver
+            SecretUser receiver = returnDefaultUserIfNull(_username);
+            SecretUser sender = getSecretUser(_sender);
+
+            // fill check list, Don't add unregistered users
+            if(sender != null || (receiver != null && !receiver.getId().equals("_id")))
+            check = new Check(_checkId, receiver, sender, _userFullName, _userSignature, _checkAmount, _secretTimestamp);
         }
 
         return check;
     }
 
-    public void deleteCheck(String checkUrl) {
+    private SecretUser returnDefaultUserIfNull(String username){
+        SecretUser defaultUser = null;
+        if(username == null){
+            try {
+                defaultUser = new SecretUser("_id", PreferenceUtils.getUser(context).getUsername());
+            }catch (NoUserException ex){
+                ex.printStackTrace();
+            }
+        }else {
+            defaultUser = getSecretUser(username);
+        }
+        return defaultUser;
+    }
+
+    public void deleteCheck(String uid) {
         SQLiteDatabase db = SenzorsDbHelper.getInstance(context).getWritableDatabase();
 
         // delete senz of given user
         db.delete(SenzorsDbContract.Check.TABLE_NAME,
-                SenzorsDbContract.Check.COLUMN_NAME_CHECK_URL + " = ?",
-                new String[]{checkUrl});
+                SenzorsDbContract.Check.COLUMN_UNIQUE_ID + " = ?",
+                new String[]{uid});
+
+        ImageUtils.deleteImageFromInternalStorage(uid, context);
     }
-
-
-
 }

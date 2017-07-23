@@ -68,12 +68,13 @@ class SenzorsDbHelper extends SQLiteOpenHelper {
     private static final String SQL_CREATE_CHECK =
             "CREATE TABLE " + SenzorsDbContract.Check.TABLE_NAME + " (" +
                     SenzorsDbContract.Check._ID + " INTEGER PRIMARY KEY AUTOINCREMENT" + ", " +
+                    SenzorsDbContract.Check.COLUMN_UNIQUE_ID + TEXT_TYPE + " UNIQUE NOT NULL" + ", " +
                     SenzorsDbContract.Check.COLUMN_TIMESTAMP + INT_TYPE + ", " +
                     SenzorsDbContract.Check.COLUMN_NAME_AMOUNT + INT_TYPE + ", " +
-                    SenzorsDbContract.Check.COLUMN_NAME_USERNAME + TEXT_TYPE + ", " +
-                    SenzorsDbContract.Check.COLUMN_NAME_CHECK_URL + TEXT_TYPE + ", " +
+                    SenzorsDbContract.Check.COLUMN_NAME_ISSUED_TO + TEXT_TYPE + ", " +
+                    SenzorsDbContract.Check.COLUMN_NAME_SIGNATURE + TEXT_TYPE + ", " +
                     SenzorsDbContract.Check.COLUMN_NAME_FULL_NAME + TEXT_TYPE + ", " +
-                    SenzorsDbContract.Check.COLUMN_NAME_CHECK_SENDER + TEXT_TYPE +
+                    SenzorsDbContract.Check.COLUMN_NAME_ISSUED_FROM + TEXT_TYPE +
                     " )";
 
     private static final String SQL_DELETE_RECENT_SECRET =

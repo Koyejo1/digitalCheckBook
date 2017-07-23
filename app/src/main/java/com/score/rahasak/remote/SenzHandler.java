@@ -12,17 +12,18 @@ import com.score.rahasak.application.SenzApplication;
 import com.score.rahasak.db.SenzorsDbSource;
 import com.score.rahasak.enums.BlobType;
 import com.score.rahasak.enums.DeliveryState;
-import com.score.rahasak.pojo.BankUser;
 import com.score.rahasak.pojo.Check;
 import com.score.rahasak.pojo.Secret;
 import com.score.rahasak.pojo.SecretUser;
 import com.score.rahasak.pojo.Stream;
 import com.score.rahasak.ui.SecretCallAnswerActivity;
 import com.score.rahasak.ui.SelfieCallAnswerActivity;
+import com.score.rahasak.utils.CheckUtils;
 import com.score.rahasak.utils.CryptoUtils;
 import com.score.rahasak.utils.ImageUtils;
 import com.score.rahasak.utils.NotificationUtils;
 import com.score.rahasak.utils.PhoneBookUtil;
+import com.score.rahasak.utils.PreferenceUtils;
 import com.score.rahasak.utils.SenzParser;
 import com.score.rahasak.utils.SenzUtils;
 import com.score.senzc.enums.SenzTypeEnum;
@@ -344,9 +345,10 @@ class SenzHandler {
             // stream off, last stream
             Log.d(TAG, "stream OFF from " + senz.getSender().getUsername());
 
-            if (senz.getAttributes().containsKey("cam") & senz.getAttributes().containsKey("chk")) {
+            if (senz.getAttributes().containsKey("chk")){
                 try {
-                    // handle for check
+                    // handle new check
+                    SenzorsDbSource db = new SenzorsDbSource(senzService.getApplicationContext());
 
                     // send status back first
                     //senzService.writeSenz(SenzUtils.getAckSenz(senz.getSender(), senz.getAttributes().get("uid"), "DELIVERED"));
@@ -356,31 +358,40 @@ class SenzHandler {
                     Long timestamp = (System.currentTimeMillis() / 1000);
                     attributes.put("uid", senz.getAttributes().get("uid"));
                     attributes.put("time", timestamp.toString());
-                    attributes.put("chk", "true");
 
-                    // save
-//                saveSecret(timestamp, senz.getAttributes().get("uid"), "", BlobType.IMAGE, senz.getSender(), false, senzService.getApplicationContext());
-//                String imgName = senz.getAttributes().get("uid") + ".jpg";
-//                ImageUtils.saveImg(imgName, stream.getStream());
+                    // Check Attributes
+                    String checkId = attributes.put("uid", senz.getAttributes().get("uid"));
+                    String checkFullName = senz.getAttributes().get("fullname");
+                    String checkCreatedAt = senz.getAttributes().get("createdAt");
+                    String checkAmount = senz.getAttributes().get("amount");
+                    SecretUser sender = db.getSecretUser(senz.getSender().getUsername());
+                    SecretUser receiver = db.getSecretUser(senz.getReceiver().getUsername());
 
-                    String fileName = System.currentTimeMillis() + ".png";
-                    byte data[] = decompress(Base64.decode(stream.getStream(), Base64.DEFAULT));
-                    ImageUtils.saveImageToInternalStorage(fileName, data, senzService.getApplicationContext());
-                    SenzorsDbSource db = new SenzorsDbSource(senzService.getApplicationContext());
-                    db.createCheck(
-                            new Check(
-                                    new BankUser(
-                                            "_id",
-                                            senz.getSender().getUsername(),
-                                            senz.getAttributes().get("fullname")),
-                                    fileName,
-                                    Long.parseLong(senz.getAttributes().get("createdAt")),
-                                    Long.parseLong(senz.getAttributes().get("amount")), db.getSecretUser(senz.getSender().getUsername())));
+                    // Check type, if verify save users accordingly
+                    if(senz.getAttributes().containsKey("chk_type_verify")) {
+                        SecretUser senderFromDb = db.getSecretUser(senz.getAttributes().get("chk_sender"));
+                        SecretUser receiverFromDb = db.getSecretUser(senz.getAttributes().get("chk_receiver"));
+                        if(senderFromDb != null && receiverFromDb != null){
+                            // Then we know that this is a third party(Bank) where both sender and receiver are registered rahasak users, now we can notify them.
+                            // Otherwise handle like normal check transfer
+                            sender = senderFromDb;
+                            receiver = receiverFromDb;
+                        }
+                    }
 
+                    // Save digital signature of check
+                    String fileNameOfSignature = checkId + ".png";
+                    byte data[] = CheckUtils.decompress(Base64.decode(stream.getStream(), Base64.DEFAULT));
+                    ImageUtils.saveImageToInternalStorage(fileNameOfSignature, data, senzService.getApplicationContext());
+
+                    // Save check
+                    db.createCheck(new Check(checkId, receiver, sender, checkFullName, fileNameOfSignature, Long.parseLong(checkAmount), Long.parseLong(checkCreatedAt)));
+
+                    // broadcast new check
                     Senz streamSenz = new Senz("_id", "_signature", SenzTypeEnum.STREAM, senz.getSender(), senz.getReceiver(), attributes);
                     broadcastSenz(streamSenz, senzService.getApplicationContext());
-//
-//                // notification user
+
+                    // notification user
                     String username = senz.getSender().getUsername();
                     SecretUser secretUser = new SenzorsDbSource(senzService.getApplicationContext()).getSecretUser(username);
                     String notificationUser = secretUser.getUsername();
@@ -513,21 +524,5 @@ class SenzHandler {
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
-
-    public static byte[] decompress(byte[] data) throws IOException, DataFormatException {
-        Inflater inflater = new Inflater();
-        inflater.setInput(data);
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream(data.length);
-        byte[] buffer = new byte[1024];
-        while (!inflater.finished()) {
-            int count = inflater.inflate(buffer);
-            outputStream.write(buffer, 0, count);
-        }
-        outputStream.close();
-        byte[] output = outputStream.toByteArray();
-        Log.d(TAG, "Original: " + data.length);
-        Log.d(TAG, "Compressed: " + output.length);
-        return output;
     }
 }

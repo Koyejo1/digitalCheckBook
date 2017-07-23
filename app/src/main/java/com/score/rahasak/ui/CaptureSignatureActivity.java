@@ -21,14 +21,18 @@ import android.widget.LinearLayout;
 import com.score.rahasak.R;
 
 public class CaptureSignatureActivity extends Activity {
-    signature mSignature;
-    Paint paint;
+
+    private static final String TAG = CaptureSignatureActivity.class.getName();
+
+    // Ui Controls
     LinearLayout mContent;
     Button clear, save;
 
+    // Data
+    Signature mSignature;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        // TODO Auto-generated method stub
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_capture_signature);
 
@@ -37,7 +41,7 @@ public class CaptureSignatureActivity extends Activity {
         clear = (Button) findViewById(R.id.clear);
         mContent = (LinearLayout) findViewById(R.id.mysignature);
 
-        mSignature = new signature(this, null);
+        mSignature = new Signature(this, null);
         mContent.addView(mSignature);
 
         save.setOnClickListener(onButtonClick);
@@ -47,7 +51,6 @@ public class CaptureSignatureActivity extends Activity {
     Button.OnClickListener onButtonClick = new Button.OnClickListener() {
         @Override
         public void onClick(View v) {
-            // TODO Auto-generated method stub
             if (v == clear) {
                 mSignature.clear();
             } else if (v == save) {
@@ -56,7 +59,7 @@ public class CaptureSignatureActivity extends Activity {
         }
     };
 
-    public class signature extends View {
+    public class Signature extends View {
         static final float STROKE_WIDTH = 10f;
         static final float HALF_STROKE_WIDTH = STROKE_WIDTH / 2;
         Paint paint = new Paint();
@@ -66,7 +69,7 @@ public class CaptureSignatureActivity extends Activity {
         float lastTouchY;
         final RectF dirtyRect = new RectF();
 
-        public signature(Context context, AttributeSet attrs) {
+        public Signature(Context context, AttributeSet attrs) {
             super(context, attrs);
             paint.setAntiAlias(true);
             paint.setColor(Color.BLACK);

@@ -30,10 +30,10 @@ import com.score.rahasak.db.SenzorsDbSource;
 import com.score.rahasak.enums.BlobType;
 import com.score.rahasak.enums.DeliveryState;
 import com.score.rahasak.exceptions.NoUserException;
-import com.score.rahasak.pojo.BankUser;
 import com.score.rahasak.pojo.Check;
 import com.score.rahasak.pojo.Secret;
 import com.score.rahasak.pojo.SecretUser;
+import com.score.rahasak.utils.CheckUtils;
 import com.score.rahasak.utils.ImageUtils;
 import com.score.rahasak.utils.PhoneBookUtil;
 import com.score.rahasak.utils.PreferenceUtils;
@@ -54,7 +54,7 @@ import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
 
-public class NewCheckFragment extends android.support.v4.app.Fragment  implements AdapterView.OnItemSelectedListener {
+public class NewCheckFragment extends android.support.v4.app.Fragment implements AdapterView.OnItemSelectedListener {
     private static final String TAG = NewCheckFragment.class.getName();
 
     // Ui elements
@@ -94,7 +94,7 @@ public class NewCheckFragment extends android.support.v4.app.Fragment  implement
         setupBtnHandlers();
     }
 
-    private void setupOwner(){
+    private void setupOwner() {
         try {
             owner = PreferenceUtils.getUser(getActivity());
         } catch (NoUserException e) {
@@ -102,7 +102,7 @@ public class NewCheckFragment extends android.support.v4.app.Fragment  implement
         }
     }
 
-    private void setupAddedUsersDropdown(){
+    private void setupAddedUsersDropdown() {
         addedUsersdropDown = (Spinner) getActivity().findViewById(R.id.spinner);
         addedUsersdropDown.setOnItemSelectedListener(this);
         addedUsersdropDown.getBackground().setColorFilter(getResources().getColor(R.color.colorPrimary), PorterDuff.Mode.SRC_IN);
@@ -122,10 +122,10 @@ public class NewCheckFragment extends android.support.v4.app.Fragment  implement
     @Override
     public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
 
-        if(position == 0){
+        if (position == 0) {
             selectedUser = null;
-        }else{
-            selectedUser = friendList.get(position-1);
+        } else {
+            selectedUser = friendList.get(position - 1);
         }
     }
 
@@ -153,7 +153,7 @@ public class NewCheckFragment extends android.support.v4.app.Fragment  implement
         generateBtn.setTypeface(typefaceThin, Typeface.BOLD);
     }
 
-    private void setupBtnHandlers(){
+    private void setupBtnHandlers() {
         generateBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -168,14 +168,18 @@ public class NewCheckFragment extends android.support.v4.app.Fragment  implement
 
                         Intent i = new Intent(getActivity(), CheckFullScreenActivity.class);
                         timestamp = System.currentTimeMillis();
+
+                        // Check Attributes
                         i.putExtra("fullname", fullName.getText().toString().trim());
                         i.putExtra("amount", amount.getText().toString().trim());
                         i.putExtra("date", timestamp.toString());
+                        i.putExtra("signatureUrl", PreferenceUtils.getSignatureFileName(getActivity()));
+
                         getContext().startActivity(i);
                     } else {
                         Toast.makeText(getActivity(), "Some fields are missing, please complete the form", Toast.LENGTH_LONG).show();
                     }
-                }catch(Exception ex){
+                } catch (Exception ex) {
                     ex.printStackTrace();
                     Toast.makeText(getActivity(), "You have entered invalid data", Toast.LENGTH_LONG).show();
                 }
@@ -185,56 +189,40 @@ public class NewCheckFragment extends android.support.v4.app.Fragment  implement
         sendBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                try {
-                    if (!fullName.getText().toString().trim().isEmpty() && !amount.getText().toString().trim().isEmpty() && selectedUser != null) {
-                        if (fullName.getText().toString().trim().equals(previouslyGeneratedFullName) && amount.getText().toString().trim().equals(previouslyGeneratedAmount)) {
+                if (!fullName.getText().toString().trim().isEmpty() && !amount.getText().toString().trim().isEmpty() && selectedUser != null) {
+                    if (fullName.getText().toString().trim().equals(previouslyGeneratedFullName) && amount.getText().toString().trim().equals(previouslyGeneratedAmount)) {
+
+                        try {
+                            // Decode Digital Signature
                             ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                            ImageUtils.getImageBitmapFromInternalStorage("capturedCheck.jpg", getActivity()).compress(Bitmap.CompressFormat.JPEG, 100, stream);
-                            byte[] byteArray = compress(stream.toByteArray());
-                            ((DrawerActivity) getActivity()).sendPhotoCheckSenz(byteArray, dbSource.getSecretUser(selectedUser.getUsername()), getActivity(), new Check(new BankUser(
-                                    "_id",
-                                    selectedUser.getUsername(),
-                                    fullName.getText().toString().trim()), "", timestamp, Long.parseLong(amount.getText().toString().trim()), null));
+                            ImageUtils.getImageBitmapFromInternalStorage(PreferenceUtils.getSignatureFileName(getActivity()), getActivity()).compress(Bitmap.CompressFormat.PNG, 100, stream);
+                            byte[] byteArray = CheckUtils.compress(stream.toByteArray());
+
+                            ((DrawerActivity) getActivity()).sendCheckSenz(byteArray, getActivity(), new Check("_id", selectedUser, dbSource.getSecretUser(selectedUser.getUsername()), fullName.getText().toString().trim(), PreferenceUtils.getSignatureFileName(getActivity()), Long.parseLong(amount.getText().toString().trim()), timestamp));
                             Toast.makeText(getActivity(), "Check Sent", Toast.LENGTH_LONG).show();
-                        } else {
-                            Toast.makeText(getActivity(), "You must regenerate the check before sending", Toast.LENGTH_LONG).show();
+                        }catch(IOException ex){
+                            ex.printStackTrace();
                         }
+
                     } else {
-                        Toast.makeText(getActivity(), "Some fields are missing, please complete the form", Toast.LENGTH_LONG).show();
+                        Toast.makeText(getActivity(), "You must regenerate the check before sending", Toast.LENGTH_LONG).show();
                     }
-                }catch(IOException ex){
-                    ex.printStackTrace();
+                } else {
+                    Toast.makeText(getActivity(), "Some fields are missing, please complete the form", Toast.LENGTH_LONG).show();
                 }
             }
         });
     }
 
-    public static byte[] compress(byte[] data) throws IOException {
-        Deflater deflater = new Deflater();
-        deflater.setInput(data);
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream(data.length);
-        deflater.finish();
-        byte[] buffer = new byte[1024];
-        while (!deflater.finished()) {
-            int count = deflater.deflate(buffer); // returns the generated code... index
-            outputStream.write(buffer, 0, count);
-        }
-        outputStream.close();
-        byte[] output = outputStream.toByteArray();
-        Log.d(TAG, "Original: " + data.length / 1024 + " Kb");
-        Log.d(TAG, "Compressed: " + output.length / 1024 + " Kb");
-        return output;
-    }
-
-    private String[] getUserNames(ArrayList<SecretUser> users){
-        final String[] userNamesArray = new String[users.size()+1];
-        if(users.size() == 0){
+    private String[] getUserNames(ArrayList<SecretUser> users) {
+        final String[] userNamesArray = new String[users.size() + 1];
+        if (users.size() == 0) {
             userNamesArray[0] = "You have no added users";
-        }else {
+        } else {
             userNamesArray[0] = "Select a friend";
         }
         for (int i = 0; i < users.size(); i++) {
-            userNamesArray[i+1] = PhoneBookUtil.getContactName(getActivity(), users.get(i).getPhone());
+            userNamesArray[i + 1] = PhoneBookUtil.getContactName(getActivity(), users.get(i).getPhone());
         }
         return userNamesArray;
     }

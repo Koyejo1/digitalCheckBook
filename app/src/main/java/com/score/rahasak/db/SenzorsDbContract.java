@@ -69,16 +69,14 @@ class SenzorsDbContract {
     }
 
     static abstract class Check implements BaseColumns {
+        static final String COLUMN_UNIQUE_ID = "uid";
         static final String TABLE_NAME = "user_check";
         static final String COLUMN_TIMESTAMP = "timestamp";
-        static final String COLUMN_NAME_USERNAME = "username";
-        static final String COLUMN_NAME_CHECK_URL = "check_url";
-        static final String COLUMN_NAME_ACC_NO = "check_accno";
+        static final String COLUMN_NAME_ISSUED_TO = "to_username";
+        static final String COLUMN_NAME_ISSUED_FROM = "from_username";
+        static final String COLUMN_NAME_SIGNATURE = "signature_url";
         static final String COLUMN_NAME_FULL_NAME = "check_fullname";
-        static final String COLUMN_NAME_NIC = "check_nic";
         static final String COLUMN_NAME_AMOUNT = "check_amount";
-        static final String COLUMN_NAME_CHECK_SENDER = "check_sender";
-
     }
 
 }

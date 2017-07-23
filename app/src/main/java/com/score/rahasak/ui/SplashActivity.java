@@ -8,7 +8,6 @@ import android.widget.TextView;
 
 import com.score.rahasak.R;
 import com.score.rahasak.exceptions.NoUserException;
-import com.score.rahasak.pojo.BankUser;
 import com.score.rahasak.remote.SenzService;
 import com.score.rahasak.utils.PreferenceUtils;
 import com.score.senzc.pojos.User;
